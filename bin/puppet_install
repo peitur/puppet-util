@@ -1,0 +1,234 @@
+#!/usr/bin/ruby
+
+
+require 'getoptlong';
+require "net/http";
+
+# 1. has proxy been set?
+# 2. what relae is running?
+#
+## redhat 5 http://yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm
+## centos 5 http://yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm
+## redhat 6 http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+## centos 6 http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+## redhat 7 http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+## centos 7 http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+## fedora 19 http://yum.puppetlabs.com/puppetlabs-release-fedora-19.noarch.rpm
+## fedora 20 http://yum.puppetlabs.com/puppetlabs-release-fedora-20.noarch.rpm
+## fedora 21 http://yum.puppetlabs.com/puppetlabs-release-fedora-21.noarch.rpm
+#
+# 3. download rpm package
+# 4. install rpm package
+# 5. install puppet
+# 6. install aditional puppet packages (puppet install ... )
+#
+
+RPMCMD = "/bin/rpm";
+YUMCMD = "/bin/yum";
+
+DEPENDCMD = ["wget"];
+RELEASEFILE = "/etc/system-release";
+PKGOPTONS = {
+		:centos5 => {
+				:description => "",
+				:rx => /CentOS.*[Rr]elease 5.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:centos6 => {
+				:description =>  "",
+				:rx => /CentOS.*[Rr]elease 6.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:centos7 => {
+				:description => "",
+				:rx => /CentOS.*[Rr]elease 7.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:redhat5 => {
+				:description => "",
+				:rx => /RedHat.*[Rr]elease 5.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:redhat6 => {
+				:description => "",
+				:rx => /RedHat.*[Rr]elease 6.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:redhat7 => {
+				:description => "",
+				:rx => /RedHat.*[Rr]elease 7.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:fedora19 => {
+				:description => "",
+				:rx => /Fedora.*[Rr]elease 19.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-fedora-19.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:fedora20 => {
+				:description => "",
+				:rx => /Fedora.*[Rr]elease 20.*/,
+				:url => "yum.puppetlabs.com/puppetlabs-release-fedora-20.noarch.rpm",
+				:rpm => ["puppet"]
+			},
+		:fedora21 => {
+				:description => "",
+				:rx => /Fedora.*[Rr]elease 21.*/,		
+				:url => "yum.puppetlabs.com/puppetlabs-release-fedora-21.noarch.rpm",
+				:rpm => ["puppet"]
+			}
+	};
+
+#PKGOPTONS.each do |k,v|
+#	puts ">> #{k} => #{v.inspect}"
+#end
+
+opts = GetoptLong.new(
+		["--help", GetoptLong::NO_ARGUMENT ],
+		["--test", GetoptLong::NO_ARGUMENT ],
+		["--debug", GetoptLong::NO_ARGUMENT ],
+		["--proxy", GetoptLong::REQUIRED_ARGUMENT ]
+	);
+
+help = nil
+debug = nil
+test = nil
+
+proxy=nil
+
+opts.each do |opt, arg|
+
+	case opt 
+		when '--test'
+			test = 1; 
+		when '--debug'
+			debug = 1;
+		when '--help' 
+			puts "Help is on the way...\n"
+			exit
+		when '--proxy'
+			proxy = arg
+	end
+
+end
+
+
+
+def detect_release( config, file )
+	
+	File.open( file, "r" ) do |fd|		
+		line = fd.gets
+		config.each do |release,values|
+			if( line =~ values[:rx] )
+				return release
+			end
+		end
+	end
+
+	return nil
+end
+
+def download( url ) 
+
+	urlparts = url.split( /\// );
+    localfile = ENV['HOME']+"/"+urlparts[1];
+
+    if( File.exists?( localfile ) )
+    	File.unlink( localfile )
+    end
+
+	Net::HTTP.start( urlparts[0] ) do |http|
+	    resp = http.get( "/"+urlparts[1] );
+
+	    puts ">> #{url} to #{localfile}"
+
+	    if( resp.code == "200" )
+		    File.open( localfile, "wb") do |file|
+		        file.write(resp.body)
+		    end	
+
+		    return localfile;
+		else
+			puts ">> ERROR: Could not download file"
+		    puts ">> #{ resp.inspect }"
+		end
+
+	end
+
+end
+
+
+
+def install_rpm( file )
+
+	fullcommand = RPMCMD+" -i "+file;
+	puts ">> Installing rpm package #{fullcommand}"
+
+	IO.popen( fullcommand ) do |fh|
+		while( line = fh.gets )
+			puts ">> RPM: #{line}"
+		end
+	end
+
+	return 1;
+end
+
+def yum_install( pkg_list )
+
+	fullcommand = YUMCMD+" install -y "+pkg_list.join(",");
+	puts ">> Installing yum package(s) #{fullcommand}"
+
+	IO.popen( fullcommand ) do |fh|
+		while( line = fh.gets )
+			puts ">> YUM: #{line}"
+		end
+	end
+
+	return pkg_list.length
+end
+
+def append_yum( key, value )
+	File.open( "/etc/yum.conf", "a") do |fd|
+		fd.puts key+"="+value+"\n"
+	end
+
+end
+
+######################################################################
+
+user = ENV['USERNAME'] ? ENV['USERNAME'] : ENV['USER'];
+ 
+if( user != "root")
+	puts "This command can only be run by the root user, you are #{user}!"
+	puts "Running in test mode!"
+	test = 1;
+end
+
+if( proxy )
+	append_yum( "proxy", proxy );
+	ENV['http_proxy'] = proxy
+end
+
+release = detect_release( PKGOPTONS, RELEASEFILE )
+if( release )
+	puts "Found release '#{release}'" if debug;
+
+	resp = download( PKGOPTONS[release][:url] )
+	if( resp )
+		if( install_rpm( resp ) )
+			yum_install( PKGOPTONS[release][:rpm] )
+		end
+	end
+
+else
+	puts "Could not detect the system release."
+	puts "Supported systems are: '#{ PKGOPTONS.keys.join(",") }'"
+end
+
+
