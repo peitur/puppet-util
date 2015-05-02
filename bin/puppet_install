@@ -17,6 +17,17 @@ require "net/http";
 ## fedora 20 http://yum.puppetlabs.com/puppetlabs-release-fedora-20.noarch.rpm
 ## fedora 21 http://yum.puppetlabs.com/puppetlabs-release-fedora-21.noarch.rpm
 #
+
+# Debian 7 (wheezy) — current stable release
+# Debian 6.0 (squeeze) — obsolete stable release
+# Debian GNU/Linux 5.0 (lenny) — obsolete stable release
+# Debian GNU/Linux 4.0 (etch) — obsolete stable release
+# Debian GNU/Linux 3.1 (sarge) — obsolete stable release
+# Debian GNU/Linux 3.0 (woody) — obsolete stable release
+# Debian GNU/Linux 2.2 (potato) — obsolete stable release
+# Debian GNU/Linux 2.1 (slink) — obsolete stable release
+# Debian GNU/Linux 2.0 (hamm) — obsolete stable release
+
 # 3. download rpm package
 # 4. install rpm package
 # 5. install puppet

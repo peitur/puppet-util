@@ -1,0 +1,77 @@
+#!/usr/bin/ruby
+
+
+require 'json'
+require 'yaml'
+
+ENDING = ".json"
+DEFAULT="default.json"
+CONFIG="../etc/enc.json"
+DEBUG = true
+
+
+## Scan the enc directory for a pattern file
+def scan_enc( dir, pattern )
+	return nil if dir == nil
+
+	if Dir.exists?( dir )
+		Dir.foreach( dir ) { |filename| puts ">>> #{filename}"}
+	else
+		if DEBUG
+			STDERR.puts "ERROR: Could not find directory to scan #{dir}"
+		end
+		return nil
+	end
+
+end
+
+
+## Load the enc file detected 
+def load_json( filename )
+
+	## 
+	if( File.exists?( filename ) )		
+		## Lets open it and parse it into a config object (hash)
+		begin
+			return JSON.load( File.open( filename ) )
+		rescue => e
+			if( DEBUG )
+				STDERR.puts "ERROR: #{e} \n"
+			end
+
+			return nil
+		end
+	else
+		if( DEBUG )
+			STDERR.puts "ERROR: Could not find config file #{filename} \n"
+		end
+
+		return nil
+	end
+
+
+end
+
+#####################################################################################################
+
+conf = load_json( CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
+
+## After we have tried to load the config, lets check if we actually loaded any data into it
+if( conf == nil )
+	if( DEBUG )
+		STDERR.puts("ERROR: No confg was loaded from #{CONFIG}")
+	end
+
+	exit()
+end
+
+
+
+## must have a pattern as only input argument
+search = ARGV[0] or exit()
+
+
+puts ">>> #{search}\n"
+scan_enc( conf['enc'], $search )
+
+puts YAML.dump( conf )
