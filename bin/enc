@@ -13,16 +13,33 @@ DEBUG = true
 ## Scan the enc directory for a pattern file
 def scan_enc( dir, pattern )
 	return nil if dir == nil
+	return nil if pattern == nil
+
+	filelist = Array.new()
 
 	if Dir.exists?( dir )
-		Dir.foreach( dir ) { |filename| puts ">>> #{filename}"}
+		Dir.foreach( dir ) do |filename| 
+			
+			if( /^\./.match( filename) )
+				next
+			end	
+
+			if( /#{pattern}/.match( filename ) )
+				filelist.push( filename )
+			end
+
+		end
 	else
 		if DEBUG
 			STDERR.puts "ERROR: Could not find directory to scan #{dir}"
 		end
+
 		return nil
 	end
 
+
+
+	return filelist
 end
 
 
@@ -71,7 +88,12 @@ end
 search = ARGV[0] or exit()
 
 
-puts ">>> #{search}\n"
-scan_enc( conf['enc'], $search )
+filelist = scan_enc( conf['enc'], search )
 
-puts YAML.dump( conf )
+## If the node didn't match to anything, use the default config file
+if( filelist.length() == 0 )
+	filelist.push( DEFAULT )
+end
+
+
+puts YAML.dump( load_json( conf['enc']+"/"+filelist[0] ) )
