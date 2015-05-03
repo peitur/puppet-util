@@ -7,7 +7,7 @@ require 'yaml'
 ENDING = ".json"
 DEFAULT="default.json"
 CONFIG="../etc/enc.json"
-DEBUG = true
+DEBUG = false
 
 
 ## Scan the enc directory for a pattern file
@@ -51,9 +51,9 @@ def load_json( filename )
 		## Lets open it and parse it into a config object (hash)
 		begin
 			return JSON.load( File.open( filename ) )
-		rescue => e
+		rescue => error  ## Catching everything this time, no need to be picky
 			if( DEBUG )
-				STDERR.puts "ERROR: #{e} \n"
+				STDERR.puts "ERROR: #{error} \n"
 			end
 
 			return nil
@@ -84,11 +84,12 @@ end
 
 
 
-## must have a pattern as only input argument
+## must have a pattern as only input argument, else must exit without other output
 search = ARGV[0] or exit()
 
+## get file list, but if nil is retrned, just exit without output
+filelist = scan_enc( conf['enc'], search ) or exit()
 
-filelist = scan_enc( conf['enc'], search )
 
 ## If the node didn't match to anything, use the default config file
 if( filelist.length() == 0 )
