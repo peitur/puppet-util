@@ -50,7 +50,19 @@ def load_json( filename )
 	if( File.exists?( filename ) )		
 		## Lets open it and parse it into a config object (hash)
 		begin
-			return JSON.load( File.open( filename ) )
+
+			nodedata = JSON.load( File.open( filename ) )
+			if( @conf != nil and nodedata != nil and nodedata.has_key?("include") )
+				include_file = @conf["enc.path"]+"/"+nodedata["include"]
+				
+				nodedata.merge!( load_json( include_file ) ).delete( "include")
+				
+				puts "Including #{include_file}" if( @debug )
+				
+			end
+	
+			return nodedata
+			
 		rescue => error  ## Catching everything this time, no need to be picky
 			if( @debug )
 				STDERR.puts "ERROR: #{error} \n"
@@ -67,20 +79,21 @@ def load_json( filename )
 	end
 
 
+
 end
 
 #####################################################################################################
 
-conf = load_json( CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
+@conf = load_json( CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
 
 
 @debug = DEBUG
-if conf != nil and conf.has_key?( "enc.debug") and conf["enc.debug"] == "true"
+if( @conf != nil and @conf.has_key?( "enc.debug") and @conf["enc.debug"] == "true" )
 	@debug = true
 end
 
 ## After we have tried to load the config, lets check if we actually loaded any data into it
-if( conf == nil )
+if( @conf == nil )
 	if( @debug )
 		STDERR.puts("ERROR: No confg was loaded from #{CONFIG}")
 	end
@@ -93,7 +106,7 @@ end
 search = ARGV[0] or exit()
 
 ## get file list, but if nil is retrned, just exit without output
-filelist = scan_enc( conf['enc.path'], search ) or exit()
+filelist = scan_enc( @conf['enc.path'], search ) or exit()
 
 
 ## If the node didn't match to anything, use the default config file
@@ -102,4 +115,4 @@ if( filelist.length() == 0 )
 end
 
 
-puts YAML.dump( load_json( conf['enc.path']+"/"+filelist[0] ) )
+puts YAML.dump( load_json( @conf['enc.path']+"/"+filelist[0] ) )
