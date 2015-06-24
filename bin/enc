@@ -6,7 +6,7 @@ require 'yaml'
 
 ENDING = ".json"
 DEFAULT="default.json"
-CONFIG="../etc/enc.json"
+CONFIG="etc/enc.json"
 DEBUG = false
 
 
@@ -19,18 +19,18 @@ def scan_enc( dir, pattern )
 
 	if Dir.exists?( dir )
 		Dir.foreach( dir ) do |filename| 
-			
-			if( /^\./.match( filename) )
+
+			if(  filename.match( /^\./ ) )
 				next
 			end	
 
-			if( /#{pattern}/.match( filename ) )
+			if( /^#{pattern}#{ENDING}$/.match( filename ) )
 				filelist.push( filename )
 			end
 
 		end
 	else
-		if DEBUG
+		if @debug
 			STDERR.puts "ERROR: Could not find directory to scan #{dir}"
 		end
 
@@ -52,7 +52,7 @@ def load_json( filename )
 		begin
 			return JSON.load( File.open( filename ) )
 		rescue => error  ## Catching everything this time, no need to be picky
-			if( DEBUG )
+			if( @debug )
 				STDERR.puts "ERROR: #{error} \n"
 			end
 
@@ -73,9 +73,15 @@ end
 
 conf = load_json( CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
 
+
+@debug = DEBUG
+if conf != nil and conf.has_key?( "enc.debug") and conf["enc.debug"] == "true"
+	@debug = true
+end
+
 ## After we have tried to load the config, lets check if we actually loaded any data into it
 if( conf == nil )
-	if( DEBUG )
+	if( @debug )
 		STDERR.puts("ERROR: No confg was loaded from #{CONFIG}")
 	end
 
@@ -83,12 +89,11 @@ if( conf == nil )
 end
 
 
-
 ## must have a pattern as only input argument, else must exit without other output
 search = ARGV[0] or exit()
 
 ## get file list, but if nil is retrned, just exit without output
-filelist = scan_enc( conf['enc'], search ) or exit()
+filelist = scan_enc( conf['enc.path'], search ) or exit()
 
 
 ## If the node didn't match to anything, use the default config file
@@ -97,4 +102,4 @@ if( filelist.length() == 0 )
 end
 
 
-puts YAML.dump( load_json( conf['enc']+"/"+filelist[0] ) )
+puts YAML.dump( load_json( conf['enc.path']+"/"+filelist[0] ) )
