@@ -9,6 +9,7 @@ DEFAULT="default.json"
 CONFIG="etc/enc.json"
 DEBUG = false
 
+STRICTMATCH = "default"
 
 ## Scan the enc directory for a pattern file
 def scan_enc( dir, pattern )
@@ -97,12 +98,12 @@ if( @conf == nil )
 	
 	STDERR.puts("ERROR: No confg was loaded from #{CONFIG}") if( @debug )
 
-	exit()
+	exit(1)
 end
 
 
 ## must have a pattern as only input argument, else must exit without other output
-search = ARGV[0] or exit()
+search = ARGV[0] or exit(1)
 
 ## get file list, but if nil is retrned, just exit without output
 filelist = scan_enc( @conf['enc.path'], search ) or exit()
@@ -110,8 +111,19 @@ filelist = scan_enc( @conf['enc.path'], search ) or exit()
 
 ## If the node didn't match to anything, use the default config file
 if( filelist.length() == 0 )
-	filelist.push( DEFAULT )
+	if( @conf.has_key?('enc.match') )
+		case @conf['enc.match']
+			when "strict" then STDERR.puts("ERROR: No data has been found") if( @debug )
+			when "allow" then filelist.push( DEFAULT )
+			else 
+				filelist.push( DEFAULT )
+		end
+	end
 end
 
 
-puts YAML.dump( load_json( @conf['enc.path']+"/"+filelist[0] ) )
+puts YAML.dump( load_json( @conf['enc.path']+"/"+filelist[0] ) ) if( filelist.length() > 0 )
+
+
+## Lets terminate nodemally
+exit(0)
