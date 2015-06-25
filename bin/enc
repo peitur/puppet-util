@@ -55,12 +55,18 @@ def load_json( filename )
 			if( @conf != nil and nodedata != nil and nodedata.has_key?("include") )
 				include_file = @conf["enc.path"]+"/"+nodedata["include"]
 				
-				nodedata.merge!( load_json( include_file ) ).delete( "include")
+#				nodedata.merge!( load_json( include_file ) ).delete( "include" )
+				load_json( include_file ).each do |k,v|
+					if( ! nodedata.has_key?( k ) )
+						nodedata[k] = v
+					end
+				end
 				
 				puts "Including #{include_file}" if( @debug )
-				
+				nodedata.delete( "include" )
 			end
 	
+
 			return nodedata
 			
 		rescue => error  ## Catching everything this time, no need to be picky
@@ -77,8 +83,6 @@ def load_json( filename )
 
 		return nil
 	end
-
-
 
 end
 
