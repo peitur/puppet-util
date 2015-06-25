@@ -1,7 +1,7 @@
 {
-  
+  "hostname":"test1.domain.com",
   "ntp": [
-  	"time1",
-	"time2"
+  	"time11",
+	"time12"
   ]
 }
