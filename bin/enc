@@ -30,10 +30,9 @@ def scan_enc( dir, pattern )
 
 		end
 	else
-		if @debug
-			STDERR.puts "ERROR: Could not find directory to scan #{dir}"
-		end
-
+		
+		STDERR.puts "ERROR: Could not find directory to scan #{dir}" if @debug
+		
 		return nil
 	end
 
@@ -62,7 +61,7 @@ def load_json( filename )
 					end
 				end
 				
-				puts "Including #{include_file}" if( @debug )
+				STDERR.puts "Including #{include_file}" if( @debug )
 				nodedata.delete( "include" )
 			end
 	
@@ -70,16 +69,13 @@ def load_json( filename )
 			return nodedata
 			
 		rescue => error  ## Catching everything this time, no need to be picky
-			if( @debug )
-				STDERR.puts "ERROR: #{error} \n"
-			end
+			
+			STDERR.puts "ERROR: #{error} \n" if( @debug )
 
 			return nil
 		end
 	else
-		if( DEBUG )
-			STDERR.puts "ERROR: Could not find config file #{filename} \n"
-		end
+		STDERR.puts "ERROR: Could not find config file #{filename} \n" if( @debug )
 
 		return nil
 	end
@@ -98,9 +94,8 @@ end
 
 ## After we have tried to load the config, lets check if we actually loaded any data into it
 if( @conf == nil )
-	if( @debug )
-		STDERR.puts("ERROR: No confg was loaded from #{CONFIG}")
-	end
+	
+	STDERR.puts("ERROR: No confg was loaded from #{CONFIG}") if( @debug )
 
 	exit()
 end
