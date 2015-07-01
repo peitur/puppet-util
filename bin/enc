@@ -1,8 +1,14 @@
 #!/usr/bin/ruby
 
 
+current_dir = File.dirname( __FILE__ )
+lib_dir = current_dir+"/../rlib"
+$LOAD_PATH.unshift( lib_dir )
+#puts "DEBUG #{__LINE__}: Load path is "+$LOAD_PATH.to_s() 
+
 require 'json'
 require 'yaml'
+
 
 ENDING = ".json"
 DEFAULT="default.json"
@@ -11,6 +17,11 @@ DEBUG = false
 
 STRICTMATCH = "default"
 
+
+
+#####################################################################################################
+########## FUNCTIONS
+#####################################################################################################
 ## Scan the enc directory for a pattern file
 def scan_enc( dir, pattern )
 	return nil if dir == nil
@@ -41,6 +52,7 @@ def scan_enc( dir, pattern )
 
 	return filelist
 end
+
 
 
 ## Load the enc file detected 
@@ -84,10 +96,12 @@ def load_json( filename )
 end
 
 #####################################################################################################
+########## MAIN
+#####################################################################################################
 
-current_dir = File.dirname( __FILE__ )
 etc_dir = current_dir+"/../etc"
 enc_dir = current_dir+"/../enc"
+
 
 
 @conf = load_json( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
@@ -127,10 +141,12 @@ if( filelist.length() == 0 )
 	end
 end
 
+#####################################################################################################
+########## OUTPUT & EXIT
+#####################################################################################################
+
 
 puts YAML.dump( load_json( @conf['enc.path']+"/"+filelist[0] ) ) if( filelist.length() > 0 )
-
-
 
 
 ## Lets terminate nodemally
