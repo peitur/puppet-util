@@ -9,9 +9,22 @@ $LOAD_PATH.unshift( lib_dir )
 require 'json'
 require 'yaml'
 
+require 'config'
+require 'database'
+require 'util'
 
-ENDING = ".json"
-DEFAULT="default.json"
+
+
+#####################################################################################################
+########## CONSTANTS
+#####################################################################################################
+
+DB_TYPE = 'dir'
+
+
+JSON_ENDING = ".json"
+ENDING = ""
+DEFAULT="default"
 CONFIG="enc.json"
 DEBUG = false
 
@@ -19,81 +32,12 @@ STRICTMATCH = "default"
 
 
 
+
 #####################################################################################################
 ########## FUNCTIONS
 #####################################################################################################
-## Scan the enc directory for a pattern file
-def scan_enc( dir, pattern )
-	return nil if dir == nil
-	return nil if pattern == nil
-
-	filelist = Array.new()
-
-	if Dir.exists?( dir )
-		Dir.foreach( dir ) do |filename| 
-
-			if(  filename.match( /^\./ ) )
-				next
-			end	
-
-			if( /^#{pattern}#{ENDING}$/.match( filename ) )
-				filelist.push( filename )
-			end
-
-		end
-	else
-		
-		STDERR.puts "ERROR #{__LINE__}: Could not find directory to scan #{dir}" if @debug
-		
-		return nil
-	end
 
 
-
-	return filelist
-end
-
-
-
-## Load the enc file detected 
-def load_json( filename )
-
-	## 
-	if( File.exists?( filename ) )		
-		## Lets open it and parse it into a config object (hash)
-		begin
-
-			nodedata = JSON.load( File.open( filename ) )
-			if( @conf != nil and nodedata != nil and nodedata.has_key?("include") )
-				include_file = @conf["enc.path"]+"/"+nodedata["include"]
-				
-#				nodedata.merge!( load_json( include_file ) ).delete( "include" )
-				load_json( include_file ).each do |k,v|
-					if( ! nodedata.has_key?( k ) )
-						nodedata[k] = v
-					end
-				end
-				
-				STDERR.puts "DEBUG #{__LINE__}: Including #{include_file}" if( @debug )
-				nodedata.delete( "include" )
-			end
-	
-
-			return nodedata
-			
-		rescue => error  ## Catching everything this time, no need to be picky
-			
-			STDERR.puts "ERROR #{__LINE__}: #{error} \n" if( @debug )
-
-			return nil
-		end
-	else
-		STDERR.puts "ERROR #{__LINE__}: Could not find config file #{filename} \n" if( @debug )
-
-		return nil
-	end
-
-end
 
 #####################################################################################################
 ########## MAIN
@@ -101,22 +45,21 @@ end
 
 etc_dir = current_dir+"/../etc"
 enc_dir = current_dir+"/../enc"
+debug = DEBUG
 
 
+conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
 
-@conf = load_json( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
-
-@debug = DEBUG
-if( @conf != nil and @conf.has_key?( "enc.debug") and @conf["enc.debug"] == "true" )
-	@debug = true
+if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
+	debug = true
 end
 
-STDERR.puts( "DEBUG #{__LINE__}: Current script dirrectory is #{current_dir} " ) if @debug
+STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
 
 ## After we have tried to load the config, lets check if we actually loaded any data into it
-if( @conf == nil )
+if( conf == nil )
 	
-	STDERR.puts("ERROR #{__LINE__}: No confg was loaded from #{CONFIG}") if( @debug )
+	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}") if( debug )
 
 	exit(1)
 end
@@ -126,14 +69,16 @@ end
 search = ARGV[0] or exit(1)
 
 ## get file list, but if nil is retrned, just exit without output
-filelist = scan_enc( @conf['enc.path'], search ) or exit()
+engine = conf.key?( "db.engine" ) ? conf.key( "db.engine") : DB_TYPE
+db = EncDatabase.new( engine, conf, debug )
+filelist = db.search( search ) or exit(1)
 
 
 ## If the node didn't match to anything, use the default config file
 if( filelist.length() == 0 )
-	if( @conf.has_key?('enc.match') )
-		case @conf['enc.match']
-			when "strict" then STDERR.puts("ERROR #{__LINE__}: No data has been found") if( @debug )
+	if( conf.key?('enc.match') )
+		case conf.key('enc.match')
+			when "strict" then STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No data has been found") if( debug )
 			when "allow" then filelist.push( DEFAULT )
 			else 
 				filelist.push( DEFAULT )
@@ -146,7 +91,7 @@ end
 #####################################################################################################
 
 
-puts YAML.dump( load_json( @conf['enc.path']+"/"+filelist[0] ) ) if( filelist.length() > 0 )
+puts YAML.dump( db.load_profile( filelist[0] ) ) if( filelist.length() > 0 )
 
 
 ## Lets terminate nodemally

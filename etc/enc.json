@@ -1,4 +1,6 @@
 {
   "enc.debug" : "false",
-  "enc.path": "enc"
+  "enc.match" : "strict",
+  "db.engine" : "dir",
+  "dir.db" : "enc"
 }
