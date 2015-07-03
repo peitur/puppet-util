@@ -1,4 +1,6 @@
 # puppet-utils
+
+## puppet_install : a simple hack, quick puppet installer
 A simple puppet autoinstaller for rpm based systems, implemented in ruby (simplified)
 
 
