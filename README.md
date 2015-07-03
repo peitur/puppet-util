@@ -1,9 +1,10 @@
-# puppetautoinstall
+# puppet-utils
 A simple puppet autoinstaller for rpm based systems, implemented in ruby (simplified)
 
 
+## enc : a puppet host management tool(kit)
 
-## etc/enc.json
+### etc/enc.json
 Configuration is a json hash in the file etc/enc.json. 
 - enc.debug : Enable debugging. This should not be used in production. All output is done to STDERR. [true|false]
 - enc.match : Strictly use registered host names or enable a default profile for hosts that have not matched any names. [strict|default]
@@ -23,7 +24,7 @@ Example
 
 All engines must have a default profile. 
 
-##= dir
+### dir
 
 Each enc profile is placed as a sepparate file in the directory specified in the dir.db setting.
 Each file should contain a json hash that is speciffic for the host. Fileending should be ".json".
