@@ -91,18 +91,23 @@ end
 #####################################################################################################
 
 fnla = Hash.new()
+profile = db.load_profile( filelist[0] )
 
 #fnla['parameters'] = []
 #fnla['classes'] = []
 
-case conf.key("enc.ctype")
-	when "classes"
-		fnla["classes"] = db.load_profile( filelist[0] )
-	when "parameters"
-		fnla["parameters"] = db.load_profile( filelist[0] )
-	else
-		STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype") ) if( debug )
-		exit(1)
+if( not ( profile.key?( 'classes') or profile.key?('parameters') ) )
+	case conf.key("enc.ctype")
+		when "classes"
+			fnla["classes"] = profile
+		when "parameters"
+			fnla["parameters"] = profile
+		else
+			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype") ) if( debug )
+			exit(1)
+	end
+else
+	fnla = profile
 end
 
 fnla['environment'] = conf.key("enc.env")
