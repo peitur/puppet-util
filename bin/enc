@@ -91,7 +91,7 @@ end
 #####################################################################################################
 
 fnla = Hash.new()
-profile = db.load_profile( filelist[0] )
+profile = db.load_profile( filelist[0] ) or exit(1)
 
 #fnla['parameters'] = []
 #fnla['classes'] = []
