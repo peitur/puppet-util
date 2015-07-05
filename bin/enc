@@ -90,8 +90,24 @@ end
 ########## OUTPUT & EXIT
 #####################################################################################################
 
+fnla = Hash.new()
 
-puts YAML.dump( db.load_profile( filelist[0] ) ) if( filelist.length() > 0 )
+#fnla['parameters'] = []
+#fnla['classes'] = []
+
+case conf.key("enc.ctype")
+	when "classes"
+		fnla["classes"] = db.load_profile( filelist[0] )
+	when "parameters"
+		fnla["parameters"] = db.load_profile( filelist[0] )
+	else
+		STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype") ) if( debug )
+		exit(1)
+end
+
+fnla['environment'] = conf.key("enc.env")
+
+puts YAML.dump( fnla ) if( filelist.length() > 0 )
 
 
 ## Lets terminate nodemally

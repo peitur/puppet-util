@@ -34,7 +34,7 @@ Each file should contain a json hash that is speciffic for the host. Fileending 
 
 Inclusion between profiles is possible though the "include: <profile>" setting.
 
-Example:
+Example, defalt:
 ```
 {
   "hostname":"test1.domain.com",
@@ -45,8 +45,21 @@ Example:
 }
 ```
 
+Example, dev.domain.com:
+```
+{
+    "hostname": "test00.test.com",
+    "include": "default"
+}
+```
 
-
-
+Result will be:
+```
+---
+hostname: test00.test.com
+ntp:
+- time11.domain.com
+- time12.domain.com
+```
 
 

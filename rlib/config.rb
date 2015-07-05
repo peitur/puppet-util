@@ -3,6 +3,9 @@ require 'util'
 
 class EncConfig
    
+    DEFAULT_ENV = "production"
+    DEFAULT_CT = "parameters"
+   
     attr_accessor :debug
     attr_reader :filename, :config
     
@@ -14,10 +17,13 @@ class EncConfig
         
         begin
             @config = EncUtil.load_json( @filename )
-        rescue error
-            raise "ERROR #{__FILE__}/#{__LINE__}:Could not load configuration #{filename}: "+error.to_s
-        end
 
+            @config['enc.env'] = DEFAULT_ENV if( not @config.key?( 'enc.env') )
+            @config['enc.ctype'] = DEFAULT_CT if( not @config.key?( 'enc.ctype') )
+
+        rescue error
+            raise "ERROR #{__FILE__}/#{__LINE__}: Could not load configuration #{filename}: "+error.to_s
+        end
     end
     
     def key?( key )
