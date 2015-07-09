@@ -164,7 +164,6 @@ class EncDatabase
         return nil if( ! @db )
         return nil if( ! pattern )
         
-        
         return @db.search( pattern )
     end
    
