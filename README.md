@@ -56,10 +56,37 @@ Example, dev.domain.com:
 Result will be:
 ```
 ---
-hostname: test00.test.com
-ntp:
-- time11.domain.com
-- time12.domain.com
+parameters:
+  hostname: test00.test.com
+  ntp:
+  - time11.domain.com
+  - time12.domain.com
+environment: production
 ```
 
+To mix classes and parameters in the same definition just specify each one. Include operations are not supported yet.
+```
+{
+    "parameters": {
+        "hostname": "dd.test.com"
+    },
+    "classes" : {
+        "ntp": [
+                "time1.domain.com",
+                "time2.domain.com"
+            ]
+    }
+}
+```
 
+Results will be
+```
+---
+parameters:
+  hostname: dd.test.com
+classes:
+  ntp:
+  - time1.domain.com
+  - time2.domain.com
+environment: production
+```
