@@ -1,7 +1,7 @@
 {
   "enc.debug" : "false",
   "enc.match" : "strict",
-  "enc.env"   : "development",
+  "enc.env"   : "production",
   "enc.ctype" : "parameters",
   "db.engine" : "dir",
   "dir.db" : "enc"

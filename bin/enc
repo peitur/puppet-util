@@ -29,7 +29,7 @@ CONFIG="enc.json"
 DEBUG = false
 
 STRICTMATCH = "default"
-
+DEFAULT_ENV = "production"
 
 
 
@@ -52,6 +52,11 @@ conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable 
 
 if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
 	debug = true
+end
+
+if( debug )
+	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Supported options "+conf.options().to_s()+"\n"
+	conf.options().each{ |k| STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Default value for #{k} => "+conf.default( k ).to_s()+"\n" }
 end
 
 STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
@@ -110,7 +115,7 @@ else
 	fnla = profile
 end
 
-fnla['environment'] = conf.key("enc.env")
+fnla['environment'] = conf.key?( "enc.env" ) ? conf.key("enc.env") : DEFAULT_ENV
 
 puts YAML.dump( fnla ) if( filelist.length() > 0 )
 

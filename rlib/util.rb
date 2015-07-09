@@ -20,8 +20,7 @@ module EncUtil
 	
 			return nil
 		end
-		
-		
+
 	end
 
 end

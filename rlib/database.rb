@@ -152,7 +152,7 @@ class EncDatabase
                 @db = DirDatabase.new( conf, debug )
                 
             else
-                STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported")
+                STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported") if( @debug )
                 throw "ERROR: unsupported engine"
                 
         end
