@@ -9,6 +9,8 @@ A simple puppet autoinstaller for rpm based systems, implemented in ruby (simpli
 
 ### etc/enc.json
 Configuration is a json hash in the file etc/enc.json. 
+- enc.env   : Type of environment, e.g. production/testing/devel
+- enc.ctype : Configuration type (when not specified in profile)
 - enc.debug : Enable debugging. This should not be used in production. All output is done to STDERR. [true|false]
 - enc.match : Strictly use registered host names or enable a default profile for hosts that have not matched any names. [strict|default]
 - db.engine : What lookup engine should be used, currently only supporting [dir]
@@ -20,6 +22,8 @@ Example
 {
   "enc.debug" : "false",
   "enc.match" : "strict",
+  "enc.env"   : "production",
+  "enc.ctype" : "parameters",
   "db.engine" : "dir",
   "dir.db" : "/ect/puppet/enc"
 }

@@ -7,12 +7,12 @@ class EncConfig
     DEFAULT_CT = "parameters"
    
    @@defaults = {
-       'enc.env' => { :value => DEFAULT_ENV, :desc => "" },
-       'enc.ctype' => { :value => DEFAULT_CT, :desc => "" },
-       'enc.debug' => { :value =>  "false", :desc => ""},
-       'enc.match' => { :value => "strict", :desc => ""},
-       'db.engine' => { :value => "dir", :desc => "" },
-       'dir.db' => { :values => "enc", :desc => "" }
+       'enc.env' => { :value => DEFAULT_ENV, :desc => "Using Puppet environment." },
+       'enc.ctype' => { :value => DEFAULT_CT, :desc => "Configuration type to use when only one (classes or parameters) is needed." },
+       'enc.debug' => { :value =>  "false", :desc => "Enable debugging. Only use when running manually."},
+       'enc.match' => { :value => "strict", :desc => "How strict the puppet hose mapping should be when provisioning hosts. Strict will stop all output if host is not found."},
+       'db.engine' => { :value => "dir", :desc => "Profile lookup method (engine) to use when getting configuration." },
+       'dir.db' => { :value => "enc", :desc => "Direrctory path." }
    }
    
     attr_accessor :debug
