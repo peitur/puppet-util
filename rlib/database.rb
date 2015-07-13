@@ -15,6 +15,8 @@ class AbstractEncDatabase
         
         if( @config.key?( "#{@engine}.db" ) )
             @db = @config.key( "#{@engine}.db" )
+        else
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Database not selected."+"\n"
         end
         
     end
@@ -66,8 +68,8 @@ class DirDatabase < AbstractEncDatabase
     		
     	else
     		
-    		STDERR.puts "ERROR #{__FILE__}/#{__LINE__}: Could not find directory to scan #{dir}" if @debug
-    		return nil
+    		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not find directory to scan #{dir}"+"\n"
+    		
     	end
 
     
@@ -108,14 +110,13 @@ class DirDatabase < AbstractEncDatabase
     			
     		rescue => error  ## Catching everything this time, no need to be picky
     			
-    			STDERR.puts "ERROR #{__FILE__}/#{__LINE__}: #{error} \n" if( @debug )
-    
-    			return nil
+    			raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
+    			
     		end
     	else
-    		STDERR.puts "ERROR #{__FILE__}/#{__LINE__}: Could not find config file #{filename} \n" if( @debug )
     
-    		return nil
+    		raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find config file #{filename}"+"\n"
+        
     	end
         
         
@@ -152,9 +153,7 @@ class EncDatabase
                 @db = DirDatabase.new( conf, debug )
                 
             else
-                STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported") if( @debug )
-                throw "ERROR: unsupported engine"
-                
+                raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
         end
     
     end

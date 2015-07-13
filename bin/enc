@@ -47,48 +47,67 @@ etc_dir = current_dir+"/../etc"
 enc_dir = current_dir+"/../enc"
 debug = DEBUG
 
-
-conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
-
-if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
-	debug = true
-end
-
-if( debug )
-	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Supported options "+conf.options().to_s()+"\n"
-	conf.options().each{ |k| STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Default value for #{k} => "+conf.default( k ).to_s()+"\n" }
-end
-
-STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
-
-## After we have tried to load the config, lets check if we actually loaded any data into it
-if( conf == nil )
+##---------------------------------------------------------------------------------------------------
+##---------------- Load Config
+##---------------------------------------------------------------------------------------------------
+begin 
+	conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
 	
-	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}") if( debug )
+	if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
+		debug = true
+	end
+	
+	if( debug )
+		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Supported options "+conf.options().to_s()+"\n"
+		conf.options().each{ |k| STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Default value for #{k} => "+conf.default( k ).to_s()+"\n" }
+	end
+	
+	STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
+	
+	## After we have tried to load the config, lets check if we actually loaded any data into it
+	if( conf == nil )
+		
+		STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}"+"\n") if( debug )
+	
+		exit(1)
+	end
 
-	exit(1)
+	
+rescue => error
+	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}:"+"\n"+error.to_s ) if( debug )
+	exit(1)	
 end
 
 
-## must have a pattern as only input argument, else must exit without other output
-search = ARGV[0] or exit(1)
+##---------------------------------------------------------------------------------------------------
+##---------------- Search database
+##---------------------------------------------------------------------------------------------------
+begin
+	
+	## must have a pattern as only input argument, else must exit without other output
+	search = ARGV[0] or exit(1)
+	
+	## get file list, but if nil is retrned, just exit without output
+	engine = conf.key?( "db.engine" ) ? conf.key( "db.engine") : DB_TYPE
+	db = EncDatabase.new( engine, conf, debug )
+	filelist = db.search( search ) or exit(1)
+	
 
-## get file list, but if nil is retrned, just exit without output
-engine = conf.key?( "db.engine" ) ? conf.key( "db.engine") : DB_TYPE
-db = EncDatabase.new( engine, conf, debug )
-filelist = db.search( search ) or exit(1)
-
-
-## If the node didn't match to anything, use the default config file
-if( filelist.length() == 0 )
-	if( conf.key?('enc.match') )
-		case conf.key('enc.match')
-			when "strict" then STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No data has been found") if( debug )
-			when "allow" then filelist.push( DEFAULT )
-			else 
-				filelist.push( DEFAULT )
+	## If the node didn't match to anything, use the default config file
+	if( filelist.length() == 0 )
+		if( conf.key?('enc.match') )
+			case conf.key('enc.match')
+				when "strict" then raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: No Profile found: #{search}"+"\n" if( debug )
+				when "allow" then filelist.push( DEFAULT )
+				else 
+					filelist.push( DEFAULT )
+			end
 		end
 	end
+	
+rescue => error
+	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No data has been found: "+"\n"+error.to_s ) if( debug )
+	exit(1)
 end
 
 #####################################################################################################
@@ -108,7 +127,7 @@ if( not ( profile.key?( 'classes') or profile.key?('parameters') ) )
 		when "parameters"
 			fnla["parameters"] = profile
 		else
-			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype") ) if( debug )
+			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype")+"\n" ) if( debug )
 			exit(1)
 	end
 else
