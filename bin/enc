@@ -114,29 +114,37 @@ end
 ########## OUTPUT & EXIT
 #####################################################################################################
 
-fnla = Hash.new()
-profile = db.load_profile( filelist[0] ) or exit(1)
+begin
 
-#fnla['parameters'] = []
-#fnla['classes'] = []
+	fnla = Hash.new()
+	profile = db.load_profile( filelist[0] )
 
-if( not ( profile.key?( 'classes') or profile.key?('parameters') ) )
-	case conf.key("enc.ctype")
-		when "classes"
-			fnla["classes"] = profile
-		when "parameters"
-			fnla["parameters"] = profile
-		else
-			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype")+"\n" ) if( debug )
-			exit(1)
+
+#   fnla['parameters'] = []
+#   fnla['classes'] = []
+	
+	if( not ( profile.key?( 'classes') or profile.key?('parameters') ) )
+		case conf.key("enc.ctype")
+			when "classes"
+				fnla["classes"] = profile
+			when "parameters"
+				fnla["parameters"] = profile
+			else
+				STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Unknown configuration type "+conf.key("enc.ctype")+"\n" ) if( debug )
+				exit(1)
+		end
+	else
+		fnla = profile
 	end
-else
-	fnla = profile
+	
+	fnla['environment'] = conf.key?( "enc.env" ) ? conf.key("enc.env") : DEFAULT_ENV
+	
+	puts YAML.dump( fnla ) if( filelist.length() > 0 )
+	
+rescue => error
+	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Could not load profile configuration: "+"\n"+error.to_s ) if( debug )
+	exit(1)
 end
-
-fnla['environment'] = conf.key?( "enc.env" ) ? conf.key("enc.env") : DEFAULT_ENV
-
-puts YAML.dump( fnla ) if( filelist.length() > 0 )
 
 
 ## Lets terminate nodemally
