@@ -4,7 +4,6 @@ require 'config'
 ################################################################################
 class AbstractEncDatabase
     
-    
     attr_accessor :engine, :debug
     attr_reader :config, :db, :schema, :user, :password
     attr_reader :strict
@@ -19,6 +18,10 @@ class AbstractEncDatabase
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Database not selected."+"\n"
         end
         
+    end
+    
+    def initdb( )
+        return nil
     end
     
     def search( pattern )
@@ -42,9 +45,7 @@ class DirDatabase < AbstractEncDatabase
 
     def initialize( conf, debug )
         super( 'dir', conf, debug )
-        
-        
-		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using directory based host lookup : "+ @config.key( 'dir.db' ) if @debug
+		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using directory based host lookup : "+ @config.key( 'dir.db' ) if( @debug )
     end
         
     ## Scan the enc directory for a pattern file
@@ -109,9 +110,7 @@ class DirDatabase < AbstractEncDatabase
     			return nodedata
     			
     		rescue => error  ## Catching everything this time, no need to be picky
-    			
     			raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
-    			
     		end
     	else
     
@@ -126,15 +125,46 @@ class DirDatabase < AbstractEncDatabase
 end
 
 ################################################################################
-class FileDatabase < AbstractEncDatabase
+class PsqlDatabase < AbstractEncDatabase
 
-    attr_accessor :path
+#    require 'pg'
+    
+    @handle = nil
     def initialize( conf, debug )
-         super( 'file', conf, debug )
+         super( 'psql', conf, debug )
          
+         begin
+            host = conf.key?( 'psql.host' ) ? conf.key( 'psql.host' ) : conf.default( 'psql.host' )
+            dbname = conf.key?( 'psql.host' ) ? conf.key( 'psql.host' ) : conf.default( 'psql.host' )
+            
+            
+            
+            @handle = PG::Connection.new( :host => host, :dbname => dbname )
+    
+            STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using PosgreSQL based host lookup : "+ @config.key( 'psql.db' ) if( @debug )
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
+        end
+        
     end
     
+    def terminate( )
+        
+        if( @handle and not @handle.finished?() )
+            @handle.finish()
+            return true
+        end
+        
+        return false
+    end
     
+    def search( pattern )
+    
+    end
+    
+    def load_profile( name )
+    
+    end
     
 end
 
@@ -151,7 +181,8 @@ class EncDatabase
         case engine
             when "dir" 
                 @db = DirDatabase.new( conf, debug )
-                
+            when "psql"
+                @db = PsqlDatabase.new( conf, debug )
             else
                 raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
         end

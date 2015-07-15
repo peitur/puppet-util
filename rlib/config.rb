@@ -13,10 +13,12 @@ class EncConfig
    @@defaults = {
        'enc.env' => { :value => DEFAULT_ENV, :desc => "Using Puppet environment." },
        'enc.ctype' => { :value => DEFAULT_CT, :desc => "Configuration type to use when only one (classes or parameters) is needed." },
-       'enc.debug' => { :value =>  DEFAULT_DEBUG, :desc => "Enable debugging. Only use when running manually."},
+       'enc.debug' => { :value => DEFAULT_DEBUG, :desc => "Enable debugging. Only use when running manually."},
        'enc.match' => { :value => DEFAULT_MATCH, :desc => "How strict the puppet hose mapping should be when provisioning hosts. Strict will stop all output if host is not found."},
        'db.engine' => { :value => DEFAULT_ENGINE, :desc => "Profile lookup method (engine) to use when getting configuration." },
-       'dir.db' => { :value => "enc", :desc => "Direrctory path." }
+       'dir.db'    => { :value => "enc", :desc => "Direrctory path." },
+       'psql.host' => { :value => '127.0.0.1', :desc => "" },
+       'psql.db'   => { :value => "puppet_enc", :desc => "" }
    }
    
     attr_accessor :debug
