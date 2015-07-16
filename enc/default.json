@@ -1,0 +1,7 @@
+{
+  "hostname":"test1.domain.com",
+  "ntp": [
+  	"time11.domain.com",
+  	"time12.domain.com"
+  ]
+}

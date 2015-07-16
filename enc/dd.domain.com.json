@@ -1,0 +1,11 @@
+{
+    "parameters": {
+        "hostname": "dd.test.com"
+    },
+    "classes" : {
+        "ntp": [
+                "time1.domain.com",
+                "time2.domain.com"
+            ]
+    }
+}
