@@ -127,7 +127,7 @@ end
 ################################################################################
 class PsqlDatabase < AbstractEncDatabase
 
-#    require 'pg'
+    require 'pg'
     
     @handle = nil
     def initialize( conf, debug )
