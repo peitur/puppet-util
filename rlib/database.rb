@@ -19,9 +19,13 @@ class AbstractEncDatabase
         end
         
     end
-    
+
     def initdb( )
         return nil
+    end
+
+    def terminate( )
+        return true
     end
     
     def search( pattern )
@@ -125,23 +129,21 @@ class DirDatabase < AbstractEncDatabase
 end
 
 ################################################################################
-class PsqlDatabase < AbstractEncDatabase
+class SqliteDatabase < AbstractEncDatabase
 
-    require 'pg'
+    require 'sqlite3'
     
-    @handle = nil
+    @@handle = nil
     def initialize( conf, debug )
-         super( 'psql', conf, debug )
+         super( 'sqlite', conf, debug )
          
          begin
-            host = conf.key?( 'psql.host' ) ? conf.key( 'psql.host' ) : conf.default( 'psql.host' )
-            dbname = conf.key?( 'psql.host' ) ? conf.key( 'psql.host' ) : conf.default( 'psql.host' )
             
+            dbname = conf.key?( 'sqlite.db' ) ? conf.key( 'sqlite.db' ) : conf.default( 'sqlite.db' )
+            @@handle = SQLite3::Database.new( dbname )
             
-            
-            @handle = PG::Connection.new( :host => host, :dbname => dbname )
-    
-            STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using PosgreSQL based host lookup : "+ @config.key( 'psql.db' ) if( @debug )
+
+            STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using SQLite based host lookup : "+ @config.key( 'psql.db' ) if( @debug )
         rescue => error
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
         end
@@ -150,8 +152,8 @@ class PsqlDatabase < AbstractEncDatabase
     
     def terminate( )
         
-        if( @handle and not @handle.finished?() )
-            @handle.finish()
+        if( @@handle and not @@handle.finished?() )
+            @@handle.finish()
             return true
         end
         
@@ -181,8 +183,8 @@ class EncDatabase
         case engine
             when "dir" 
                 @db = DirDatabase.new( conf, debug )
-            when "psql"
-                @db = PsqlDatabase.new( conf, debug )
+            when "sqlite"
+                @db = SqliteDatabase.new( conf, debug )
             else
                 raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
         end

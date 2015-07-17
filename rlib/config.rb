@@ -10,16 +10,18 @@ class EncConfig
    DEFAULT_ENGINE = "db"
  
    
-   @@defaults = {
-       'enc.env' => { :value => DEFAULT_ENV, :desc => "Using Puppet environment." },
-       'enc.ctype' => { :value => DEFAULT_CT, :desc => "Configuration type to use when only one (classes or parameters) is needed." },
-       'enc.debug' => { :value => DEFAULT_DEBUG, :desc => "Enable debugging. Only use when running manually."},
-       'enc.match' => { :value => DEFAULT_MATCH, :desc => "How strict the puppet hose mapping should be when provisioning hosts. Strict will stop all output if host is not found."},
-       'db.engine' => { :value => DEFAULT_ENGINE, :desc => "Profile lookup method (engine) to use when getting configuration." },
-       'dir.db'    => { :value => "enc", :desc => "Direrctory path." },
-       'psql.host' => { :value => '127.0.0.1', :desc => "" },
-       'psql.db'   => { :value => "puppet_enc", :desc => "" }
-   }
+    @@defaults = {
+       'enc.env'   => { 'value' => DEFAULT_ENV, 'desc' => "Using Puppet environment." },
+       'enc.ctype' => { 'value' => DEFAULT_CT, 'desc' => "Configuration type to use when only one (classes or parameters) is needed." },
+       'enc.debug' => { 'value' => DEFAULT_DEBUG, 'desc' => "Enable debugging. Only use when running manually."},
+       'enc.match' => { 'value' => DEFAULT_MATCH, 'desc' => "How strict the puppet hose mapping should be when provisioning hosts. Strict will stop all output if host is not found."},
+       'db.engine' => { 'value' => DEFAULT_ENGINE, 'desc' => "Profile lookup method (engine) to use when getting configuration." },
+       'dir.db'    => { 'value' => "enc", 'desc' => "Direrctory path." },
+       'psql.host' => { 'value' => '127.0.0.1', 'desc' => "" },
+       'psql.db'   => { 'value' => "puppet_enc", 'desc' => "" },
+       'sqlite.db' => { 'value' => "", 'desc' => "SQLite database path" }
+       
+    }
    
     attr_accessor :debug
     attr_reader :filename, :config
@@ -61,7 +63,7 @@ class EncConfig
         
         if( @@defaults.key?( key ) )
             data = @@defaults[ key ]
-            return data[ :value ]
+            return data[ 'value' ]
         end
         
         return nil
