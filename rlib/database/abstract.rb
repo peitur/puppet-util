@@ -16,7 +16,11 @@ class AbstractEncDatabase
         
     end
 
-    def initdb( )
+    def initdb()
+        return nil
+    end
+
+    def dropdb()
         return nil
     end
 

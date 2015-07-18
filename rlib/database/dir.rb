@@ -1,4 +1,5 @@
 require "database/abstract"
+require "fileutils"
 
 class DirDatabase < AbstractEncDatabase
 
@@ -6,6 +7,15 @@ class DirDatabase < AbstractEncDatabase
         super( 'dir', conf, debug )
 		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using directory based host lookup : "+ @config.key( 'dir.db' ) if( @debug )
     end
+
+    def initdb()    	
+    	if( @config['dir.db'] )
+	    	FileUtils.mkdir_p( @config['dir.db'] ) if( not Dir.exists?( @config['dir.db'] ) )
+	    else
+    		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Can not initialize db : "+@config['dir.db']+"\n"
+	    end
+    end
+
         
     ## Scan the enc directory for a pattern file
     def search( pattern )
@@ -36,7 +46,6 @@ class DirDatabase < AbstractEncDatabase
     	return filelist
     end
     
-
 
     def load_profile( name )
         return nil if ! name
