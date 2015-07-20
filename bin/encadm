@@ -109,9 +109,10 @@ end
 def print_help()
 	STDOUT.puts( "encadm <task> <options>"+"\n" )
 
-	STDOUT.puts( "Supported tasks"+"\n" )
+	STDOUT.puts( "Supported task are [help|add|del|mod|list|fetch]"+"\n" )
 
-	STDOUT.puts( "add|del|mod|list|fetch"+"\n" )
+	STDOUT.puts( "\n" )
+	STDOUT.puts( "\thelp\tThis help printout\t\tRequires:[]"+"\n" )
 	STDOUT.puts( "\tadd\tAdd a prfile and filename\tRequires:[profile,file]"+"\n" )
 	STDOUT.puts( "\tdel\tDelete a profile\t\tRequires:[profile]"+"\n" )
 	STDOUT.puts( "\tlist\tList available profiles\t\tRequires:[]"+"\n" )
@@ -227,6 +228,9 @@ begin
 	    	fetch_profile( db, profile )
 	    when "mod"
 	    	update_profile( db, profile, infile )
+	    when "help"
+			print_help()
+			exit()
 	    else
 	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
 	        exit(-1)
