@@ -90,15 +90,47 @@ class DirDatabase < AbstractEncDatabase
     end
 
     def insert( profile, config )
+
+        dir = @config.key( 'dir.db' )
+        filename = dir+"/"+profile+".json"
+        
+        fd = File.new( filename, mode="w" )
+        fd.write( config )
+        fd.close()
+
     end
     
     def delete( profile )
+        dir = @config.key( 'dir.db' )
+        filename = dir+"/"+profile+".json"
+        
+        File.unlink( filename ) if( File.exists?(filename ))        
     end
     
     def update( profile, config )
     end
     
     def fetch( profile )
+    end
+    
+    def list()
+        dir = @config.key( 'dir.db' )
+    	filelist = Array.new()
+    	
+    	if Dir.exists?( dir )
+    		Dir.foreach( dir ) do |filename| 
+    			if(  filename.match( /^\./ ) )
+    				next
+    			end	
+    
+                filename.sub!( /\.json/, "" )
+				filelist.push( filename )
+    		end
+    	else
+    		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not find directory to scan #{dir}"+"\n"
+    	end
+    
+    	return filelist    
     end
     
 end

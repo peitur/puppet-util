@@ -32,26 +32,67 @@ DEBUG = false
 ########## FUNCTIONS
 #####################################################################################################
 
-def add_profile( profile, infile )
+def add_profile( db, profile, infile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing profile "+"\n" if( not profile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing reference file "+"\n" if( not infile )
+
+	begin
+		db.insert( profile, EncUtil.load_json( infile ) )
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+
 end
 
-def del_profile( profile )
+def del_profile( db, profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Del profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Del profile, Missing profile "+"\n" if( not profile )
 
+	begin
+		db.delete( profile )
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+
 end
 
-def update_profile( profile, infile )
+def update_profile( db, profile, infile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing profile "+"\n" if( not profile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing reference file "+"\n" if( not infile )
 
+	begin
+		config = EncUtil.load_json( infile )
+		
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+
+
 end
 
-def profile_list()
+def profile_list( db )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, Missing database connection "+"\n" if( not db )
+
+	begin
+		filelist = db.list()
+		if( filelist.length() > 0 )
+			puts("Found #{filelist.length()}")
+
+			filelist.each do |x|
+				puts( ">> "+x.to_s+"\n")
+			end
+		else
+			puts("No profiles found")
+		end
+	rescue
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, fetching list "+"\n" if( not db )
+	end
 end
 
-def fetch_profile( profile )
+def fetch_profile( db, profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Fetch profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Fetch profile, Missing profile "+"\n" if( not profile )
 
 end
@@ -100,26 +141,6 @@ opts.each do |opt, arg|
 end
 
 
-begin
-
-	case task
-	    when "add"
-	    	add_profile( profile, infile )
-	    when "del"
-	    	del_profile( profile )
-	    when "list"
-	    	profile_list()
-	    when "mod"
-	    	update_profile( profile, infile )
-	    else
-	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
-	        exit(-1)
-	end
-
-rescue => error
-	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Task could not run "+"\n"+error.to_s )
-	exit(1)	
-end
 
 ##---------------------------------------------------------------------------------------------------
 ##---------------- Load Config
@@ -152,5 +173,42 @@ rescue => error
 	exit(1)	
 end
 
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Search database
+##---------------------------------------------------------------------------------------------------
+begin
+	
+	engine = conf.key?( "db.engine" ) ? conf.key( "db.engine") : DB_TYPE
+	db = EncDatabase.new( engine, conf, debug )
+
+rescue => error
+	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No data has been found: "+"\n"+error.to_s ) if( debug )
+	exit(1)
+end
+
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Run task
+##---------------------------------------------------------------------------------------------------
+begin
+	case task
+	    when "add"
+	    	add_profile( db, profile, infile )
+	    when "del"
+	    	del_profile( db, profile )
+	    when "list"
+	    	profile_list( db )
+	    when "mod"
+	    	update_profile( db, profile, infile )
+	    else
+	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
+	        exit(-1)
+	end
+
+rescue => error
+	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Task could not run "+"\n"+error.to_s )
+	exit(1)	
+end
 
 

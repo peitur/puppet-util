@@ -57,6 +57,8 @@ class AbstractEncDatabase
         return nil
     end
     
-    
+    def list()
+        return nil
+    end
 end
 
