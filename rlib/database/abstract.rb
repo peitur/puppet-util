@@ -40,5 +40,23 @@ class AbstractEncDatabase
         return @config["#{engine}.db"]
     end
 
+
+    def insert( profile, config )
+        return nil
+    end
+    
+    def delete( profile )
+        return nil
+    end
+    
+    def update( profile, config )
+        return nil
+    end
+    
+    def fetch( profile )
+        return nil
+    end
+    
+    
 end
 

@@ -42,4 +42,16 @@ class PsqlDatabase < AbstractEncDatabase
     
     end
     
+    def insert( profile, config )
+    end
+    
+    def delete( profile )
+    end
+    
+    def update( profile, config )
+    end
+    
+    def fetch( profile )
+    end 
+    
 end

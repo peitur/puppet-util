@@ -1,0 +1,156 @@
+#!/usr/bin/ruby
+
+require 'getoptlong'
+
+
+current_dir = File.dirname( __FILE__ )
+lib_dir = current_dir+"/../rlib"
+$LOAD_PATH.unshift( lib_dir )
+#puts "DEBUG #{__LINE__}: Load path is "+$LOAD_PATH.to_s() 
+
+
+
+require 'json'
+require 'yaml'
+
+require 'config'
+require 'database'
+require 'util'
+
+
+#####################################################################################################
+########## CONSTANTS
+#####################################################################################################
+
+CONFIG="enc.json"
+DEBUG = false
+
+
+
+
+#####################################################################################################
+########## FUNCTIONS
+#####################################################################################################
+
+def add_profile( profile, infile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing profile "+"\n" if( not profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing reference file "+"\n" if( not infile )
+end
+
+def del_profile( profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Del profile, Missing profile "+"\n" if( not profile )
+
+end
+
+def update_profile( profile, infile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing profile "+"\n" if( not profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing reference file "+"\n" if( not infile )
+
+end
+
+def profile_list()
+end
+
+def fetch_profile( profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Fetch profile, Missing profile "+"\n" if( not profile )
+
+end
+
+def print_help()
+	
+end
+
+
+#####################################################################################################
+########## MAIN
+#####################################################################################################
+
+etc_dir = current_dir+"/../etc"
+enc_dir = current_dir+"/../enc"
+debug = DEBUG
+
+profile = nil
+infile = nil
+
+task = ARGV.shift()
+
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--debug', '-d', GetoptLong::NO_ARGUMENT ],
+  [ '--profile', '-p', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--file', '-i', GetoptLong::OPTIONAL_ARGUMENT  ]
+)
+
+opts.each do |opt, arg|
+	case opt 
+		when "--debug"
+			debug = true
+		when "--help"
+			print_help()
+			exit()
+		when "--profile"
+			profile = arg
+		when "--file"
+			infile = arg
+		else
+			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Option #{opt} is not supported"+"\n")
+			exit(-1)
+	end
+end
+
+
+begin
+
+	case task
+	    when "add"
+	    	add_profile( profile, infile )
+	    when "del"
+	    	del_profile( profile )
+	    when "list"
+	    	profile_list()
+	    when "mod"
+	    	update_profile( profile, infile )
+	    else
+	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
+	        exit(-1)
+	end
+
+rescue => error
+	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Task could not run "+"\n"+error.to_s )
+	exit(1)	
+end
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Load Config
+##---------------------------------------------------------------------------------------------------
+begin 
+	conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
+	
+	if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
+		debug = true
+	end
+	
+	if( debug )
+		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Supported options "+conf.options().to_s()+"\n"
+		conf.options().each{ |k| STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Default value for #{k} => "+conf.default( k ).to_s()+"\n" }
+	end
+	
+	STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
+	
+	## After we have tried to load the config, lets check if we actually loaded any data into it
+	if( conf == nil )
+		
+		STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}"+"\n")
+	
+		exit(1)
+	end
+
+	
+rescue => error
+	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}:"+"\n"+error.to_s )
+	exit(1)	
+end
+
+
+

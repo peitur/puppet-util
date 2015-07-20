@@ -9,6 +9,7 @@ require 'config'
 require "database/abstract"
 
 ################################################################################
+## User database interface
 class EncDatabase 
 
 
@@ -29,7 +30,7 @@ class EncDatabase
                     raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
             end
         rescue => error
-            raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Could not load file for engine #{engine}"+"\n"
+            raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Could not load file for engine #{engine} : #{error}"+"\n"
         end
     end
 
@@ -48,5 +49,50 @@ class EncDatabase
         return @db.load_profile( name )
     end
    
+   
+   
+    
+end
+
+
+################################################################################
+## Database administration interface
+class EncAdmDatabase
+    attr_accessor :debug
+    attr_reader :db 
+    
+    def initialize( engine, conf, debug )
+        @debug = debug
+        
+        begin
+            case engine
+                when "dir"
+                    require "database/dir"
+                    @db = DirDatabase.new( conf, debug )
+                when "sqlite"
+                    require "database/sqlite"
+                    @db = SqliteDatabase.new( conf, debug )
+                else
+                    raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
+            end
+        rescue => error
+            raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Could not load file for engine #{engine} : #{error}"+"\n"
+        end        
+        
+    end
+    
+    def insert( profile, config, debug = nil )
+    end
+    
+    def delete( profile, debug = nil )
+    end
+    
+    def update( profile, config, debug = nil )
+    end
+    
+    def fetch( profile, debug = nil )
+    end
+    
+    
     
 end
