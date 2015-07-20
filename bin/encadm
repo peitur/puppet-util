@@ -78,7 +78,7 @@ def profile_list( db )
 	begin
 		filelist = db.list()
 		if( filelist.length() > 0 )
-			puts("Found #{filelist.length()}")
+			puts("Found #{filelist.length()} profiles")
 
 			filelist.each do |x|
 				puts( ">> "+x.to_s+"\n")
