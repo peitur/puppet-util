@@ -62,6 +62,7 @@ class EncDatabase
     end
     
     def fetch( profile, debug = nil )
+        return @db.fetch( profile )
     end
     
     def list()

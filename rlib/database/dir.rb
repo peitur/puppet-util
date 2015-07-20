@@ -111,6 +111,7 @@ class DirDatabase < AbstractEncDatabase
     end
     
     def fetch( profile )
+        return load_profile( profile )
     end
     
     def list()
