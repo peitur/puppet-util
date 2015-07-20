@@ -21,7 +21,7 @@ require 'util'
 #####################################################################################################
 ########## CONSTANTS
 #####################################################################################################
-
+JSON_ENDING = ".json"
 CONFIG="enc.json"
 DEBUG = false
 
@@ -95,10 +95,34 @@ def fetch_profile( db, profile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Fetch profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Fetch profile, Missing profile "+"\n" if( not profile )
 
+	begin
+		
+		puts( db.fetch( profile ) )
+		
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+
+
 end
 
 def print_help()
-	
+	STDOUT.puts( "encadm <task> <options>"+"\n" )
+
+	STDOUT.puts( "Supported tasks"+"\n" )
+
+	STDOUT.puts( "add|del|mod|list|fetch"+"\n" )
+	STDOUT.puts( "\tadd\tAdd a prfile and filename\tRequires:[profile,file]"+"\n" )
+	STDOUT.puts( "\tdel\tDelete a profile\t\tRequires:[profile]"+"\n" )
+	STDOUT.puts( "\tlist\tList available profiles\t\tRequires:[]"+"\n" )
+	STDOUT.puts( "\tfetch\tFetch a profile content\t\tRequires:[profile]"+"\n" )
+	STDOUT.puts( "\t"+"\n" )
+
+	STDOUT.puts( "\t--help\t\t-h\tThis help"+"\n" )
+	STDOUT.puts( "\t--debug\t\t-d\tEnable debugging"+"\n" )
+	STDOUT.puts( "\t--profile\t-p\tProfile name"+"\n" )
+	STDOUT.puts( "\t--file\t\t-i\tFilename to use as source"+"\n" )
+
 end
 
 
@@ -199,6 +223,8 @@ begin
 	    	del_profile( db, profile )
 	    when "list"
 	    	profile_list( db )
+	    when "fetch"
+	    	fetch_profile( db, profile )
 	    when "mod"
 	    	update_profile( db, profile, infile )
 	    else
