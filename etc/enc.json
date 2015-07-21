@@ -3,7 +3,7 @@
   "enc.match" : "strict",
   "enc.env"   : "production",
   "enc.ctype" : "parameters",
-  "db.engine" : "sqlite",
-  "dir.db" : "enc",
+  "db.engine" : "dir",
+  "dir.db" : "/home/ubuntu/workspace/enc",
   "sqlite.db" : "test/sqlite/enc.db"
 }

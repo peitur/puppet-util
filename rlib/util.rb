@@ -3,7 +3,7 @@ module EncUtil
 
 	def EncUtil.load_json( filename )
 		## 
-		if( File.exists?( filename ) )		
+		if( File.exists?( filename ) or File.symlink?( filename ) )		
 			## Lets open it and parse it into a config object (hash)
 			begin
 	
