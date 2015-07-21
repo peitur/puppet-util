@@ -59,6 +59,7 @@ class EncDatabase
     end
     
     def update( profile, config, debug = nil )
+        return @db.update( profile, config )
     end
     
     def fetch( profile, debug = nil )

@@ -113,6 +113,18 @@ class DirDatabase < AbstractEncDatabase
     end
     
     def update( profile, config )
+
+        dir = @config.key( 'dir.db' )
+        filename = dir+"/"+profile+".json"
+
+        return nil if( not File.exists?( filename ) )
+        
+        File.unlink( filename )
+        
+        fd = File.new( filename, mode="w" )
+        fd.write( config )
+        fd.close()
+        
     end
     
     def fetch( profile )

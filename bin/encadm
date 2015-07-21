@@ -75,7 +75,8 @@ def update_profile( db, profile, infile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing reference file "+"\n" if( not infile )
 
 	begin
-		config = EncUtil.load_json( infile )
+
+		db.update( profile, EncUtil.load_json( infile ) )
 		
 	rescue => error
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
