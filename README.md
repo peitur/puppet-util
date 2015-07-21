@@ -6,6 +6,7 @@ A simple puppet autoinstaller for rpm based systems, implemented in ruby (simpli
 
 ## encadm 
 The admin command used to manage the different profiles through the command line.
+One command is used to administer the hosts and profiles from the command line.
 
 ```
 bin/encadm help
@@ -26,6 +27,50 @@ Options:
         --profile       -p      Profile name
         --file          -i      Filename to use as source
         --host          -H      Host (cert) name        
+```
+
+
+
+### Adding profile
+
+First, prepare a input file to add. Use JSON format to describe the configuration.
+```
+cat example.json
+{
+  "ntp": [
+        "time11.domain.com",
+        "time12.domain.com"
+  ]
+}
+```
+
+Use the file 
+```
+encadm add --profile default --file example.json
+```
+
+### Binding host to a profile
+```
+encadm bind --host test.example.com --profile default
+```
+
+### Deleting profile
+
+Deleting a profile
+```
+encadm del --profile default
+```
+
+Deleting a host binding
+```
+encadm del --host test.example.com
+```
+
+
+### Listing profiles and hosts
+Lists both profiles and 
+```
+encadm list
 ```
 
 
