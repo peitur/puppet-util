@@ -112,13 +112,16 @@ def print_help()
 	STDOUT.puts( "Supported task are [help|add|del|mod|list|fetch]"+"\n" )
 
 	STDOUT.puts( "\n" )
+	STDOUT.puts( "Tasks:\n" )
 	STDOUT.puts( "\thelp\tThis help printout\t\tRequires:[]"+"\n" )
 	STDOUT.puts( "\tadd\tAdd a prfile and filename\tRequires:[profile,file]"+"\n" )
+	STDOUT.puts( "\tmod\tModify existing profile\tRequires:[profile, file]"+"\n")
 	STDOUT.puts( "\tdel\tDelete a profile\t\tRequires:[profile]"+"\n" )
 	STDOUT.puts( "\tlist\tList available profiles\t\tRequires:[]"+"\n" )
 	STDOUT.puts( "\tfetch\tFetch a profile content\t\tRequires:[profile]"+"\n" )
 	STDOUT.puts( "\t"+"\n" )
-
+	
+	STDOUT.puts( "Options:\t"+"\n" )
 	STDOUT.puts( "\t--help\t\t-h\tThis help"+"\n" )
 	STDOUT.puts( "\t--debug\t\t-d\tEnable debugging"+"\n" )
 	STDOUT.puts( "\t--profile\t-p\tProfile name"+"\n" )

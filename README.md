@@ -12,11 +12,14 @@ bin/encadm help
 encadm <task> <options>
 Supported task are [add|del|mod|list|fetch|help]
 
+Tasks:
         add     Add a prfile and filename       Requires:[profile,file]
         del     Delete a profile                Requires:[profile]
+        mod     Modify existing profile         Requires:[profile, file]
         list    List available profiles         Requires:[]
         fetch   Fetch a profile content         Requires:[profile]
 
+Options:
         --help          -h      This help
         --debug         -d      Enable debugging
         --profile       -p      Profile name
