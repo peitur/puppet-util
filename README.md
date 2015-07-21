@@ -4,6 +4,26 @@ Misc puppet tools hacked togeather for fun and profit ...
 ## puppet_install : a simple hack, quick puppet installer
 A simple puppet autoinstaller for rpm based systems, implemented in ruby (simplified)
 
+## encadm 
+The admin command used to manage the different profiles through the command line.
+
+```
+bin/encadm help
+encadm <task> <options>
+Supported task are [add|del|mod|list|fetch|help]
+
+        add     Add a prfile and filename       Requires:[profile,file]
+        del     Delete a profile                Requires:[profile]
+        list    List available profiles         Requires:[]
+        fetch   Fetch a profile content         Requires:[profile]
+
+        --help          -h      This help
+        --debug         -d      Enable debugging
+        --profile       -p      Profile name
+        --file          -i      Filename to use as source
+```
+
+
 
 ## enc : a puppet host management tool(kit)
 
