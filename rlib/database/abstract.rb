@@ -60,5 +60,10 @@ class AbstractEncDatabase
     def list()
         return nil
     end
+    
+    def bind( hostname, profile )
+        return nil
+    end
+    
 end
 

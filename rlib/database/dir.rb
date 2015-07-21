@@ -2,6 +2,7 @@ require "database/abstract"
 require "fileutils"
 
 class DirDatabase < AbstractEncDatabase
+    JSON_ENDING = ".json"
 
     def initialize( conf, debug )
         super( 'dir', conf, debug )
@@ -100,11 +101,15 @@ class DirDatabase < AbstractEncDatabase
 
     end
     
-    def delete( profile )
+    def delete( what )
         dir = @config.key( 'dir.db' )
-        filename = dir+"/"+profile+".json"
+        filename = dir+"/"+what+JSON_ENDING
         
-        File.unlink( filename ) if( File.exists?(filename ))        
+        if( File.symlink?( filename ) )
+            File.unlink( filename ) 
+        else
+            File.unlink( filename ) if( File.exists?( filename ) )
+        end    
     end
     
     def update( profile, config )
@@ -116,22 +121,44 @@ class DirDatabase < AbstractEncDatabase
     
     def list()
         dir = @config.key( 'dir.db' )
-    	filelist = Array.new()
+    	filelist = Hash.new()
+    	filelist["profile"] = Array.new()
+    	filelist["host"] = Array.new()
+    	
     	
     	if Dir.exists?( dir )
     		Dir.foreach( dir ) do |filename| 
-    			if(  filename.match( /^\./ ) )
-    				next
-    			end	
-    
-                filename.sub!( /\.json/, "" )
-				filelist.push( filename )
+    			next if(  filename.match( /^\./ ) )
+
+                if( File.symlink?( dir+"/"+filename ) )
+                    realfile = File.readlink( dir+"/"+filename )
+                    filelist["host"].push( [ filename.sub( /\.json/, "" ),  realfile.sub( /\.json/, "" ) ] )
+                else
+                    filename.sub!( /\.json/, "" )
+    				filelist["profile"].push( filename )
+				end
+				
     		end
     	else
     		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not find directory to scan #{dir}"+"\n"
     	end
     
     	return filelist    
+    end
+    
+
+    def bind( hostname, profile )
+        dir = @config.key( 'dir.db' )
+
+        profile_file = dir+"/"+profile+JSON_ENDING
+        host_file = dir+"/"+hostname+JSON_ENDING
+      
+        if( File.exists?( profile_file ) )
+            File.symlink( profile_file, host_file )
+            return [ profile_file, host_file ]
+        else
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile} to bind with host #{hostname}"+"\n"
+        end
     end
     
 end

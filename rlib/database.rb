@@ -54,8 +54,8 @@ class EncDatabase
         return @db.insert( profile, config )
     end
     
-    def delete( profile, debug = nil )
-        return @db.delete( profile )
+    def delete( what, debug = nil )
+        return @db.delete( what )
     end
     
     def update( profile, config, debug = nil )
@@ -65,9 +65,12 @@ class EncDatabase
         return @db.fetch( profile )
     end
     
-    def list()
+    def list( debug = nil )
         return @db.list()
     end
    
+    def bind( hostname, profile, debug = nil )
+       return @db.bind( hostname, profile )
+    end
     
 end

@@ -57,6 +57,18 @@ def del_profile( db, profile )
 
 end
 
+def del_host( db, host )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Del host, Missing database connection "+"\n" if( not db )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Del host, Missing host "+"\n" if( not host )
+
+	begin
+		db.delete( host )
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+
+end
+
 def update_profile( db, profile, infile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing profile "+"\n" if( not profile )
@@ -78,11 +90,18 @@ def profile_list( db )
 	begin
 		filelist = db.list()
 		if( filelist.length() > 0 )
-			puts("Found #{filelist.length()} profiles")
+			puts("Found #{filelist["profile"].length()} profiles and #{filelist["host"].length()} bound hosts")
 
-			filelist.each do |x|
-				puts( ">> "+x.to_s+"\n")
+			puts("Profiles:\n")
+			filelist["profile"].each do |x|
+				puts( "\t>> "+x.to_s+"\n")
 			end
+			
+			puts("Bound hosts:\n")
+			filelist["host"].each do |x|
+				puts( "\t>> "+x[0].to_s+" => "+x[1].to_s+"\n")
+			end
+			
 		else
 			puts("No profiles found")
 		end
@@ -102,14 +121,31 @@ def fetch_profile( db, profile )
 	rescue => error
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
 	end
+end
 
+def bind_profile( db, hostname, profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Bind profile, Missing database connection "+"\n" if( not db )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Bind profile, Missing profile "+"\n" if( not profile )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Bind profile, Missing hostname "+"\n" if( not hostname )
+	
 
+	begin
+		
+		reply = db.bind( hostname, profile )
+		if( reply.length() == 2 )
+			puts( "Bound #{reply[0]} => #{reply[1]}"+"\n")
+		else
+			puts( "Failed to bind #{hostname} to #{profile}"+"\n")
+		end
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
 end
 
 def print_help()
 	STDOUT.puts( "encadm <task> <options>"+"\n" )
 
-	STDOUT.puts( "Supported task are [help|add|del|mod|list|fetch]"+"\n" )
+	STDOUT.puts( "Supported task are [help|add|del|mod|list|fetch|bind]"+"\n" )
 
 	STDOUT.puts( "\n" )
 	STDOUT.puts( "Tasks:\n" )
@@ -119,6 +155,7 @@ def print_help()
 	STDOUT.puts( "\tdel\tDelete a profile\t\tRequires:[profile]"+"\n" )
 	STDOUT.puts( "\tlist\tList available profiles\t\tRequires:[]"+"\n" )
 	STDOUT.puts( "\tfetch\tFetch a profile content\t\tRequires:[profile]"+"\n" )
+	STDOUT.puts( "\tbind\tBind a host to a profile\t\tRequires:[host,profile]"+"\n" )
 	STDOUT.puts( "\t"+"\n" )
 	
 	STDOUT.puts( "Options:\t"+"\n" )
@@ -126,6 +163,7 @@ def print_help()
 	STDOUT.puts( "\t--debug\t\t-d\tEnable debugging"+"\n" )
 	STDOUT.puts( "\t--profile\t-p\tProfile name"+"\n" )
 	STDOUT.puts( "\t--file\t\t-i\tFilename to use as source"+"\n" )
+	STDOUT.puts( "\t--host\t-H\tHost (cert) name"+"\n" )
 
 end
 
@@ -140,6 +178,7 @@ debug = DEBUG
 
 profile = nil
 infile = nil
+hostname = nil
 
 task = ARGV.shift()
 
@@ -148,7 +187,7 @@ opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
   [ '--debug', '-d', GetoptLong::NO_ARGUMENT ],
   [ '--profile', '-p', GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--file', '-i', GetoptLong::OPTIONAL_ARGUMENT  ]
+  [ '--host', '-H', GetoptLong::OPTIONAL_ARGUMENT ]
 )
 
 opts.each do |opt, arg|
@@ -162,6 +201,8 @@ opts.each do |opt, arg|
 			profile = arg
 		when "--file"
 			infile = arg
+		when "--host"
+			hostname = arg
 		else
 			STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: Option #{opt} is not supported"+"\n")
 			exit(-1)
@@ -224,13 +265,16 @@ begin
 	    when "add"
 	    	add_profile( db, profile, infile )
 	    when "del"
-	    	del_profile( db, profile )
+	    	what = hostname ? hostname : profile
+	    	del_profile( db, what )
 	    when "list"
 	    	profile_list( db )
 	    when "fetch"
 	    	fetch_profile( db, profile )
 	    when "mod"
 	    	update_profile( db, profile, infile )
+	    when "bind"
+	    	bind_profile( db, hostname, profile )	    	
 	    when "help"
 			print_help()
 			exit()
