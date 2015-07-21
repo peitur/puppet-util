@@ -163,7 +163,7 @@ def print_help()
 	STDOUT.puts( "\t--debug\t\t-d\tEnable debugging"+"\n" )
 	STDOUT.puts( "\t--profile\t-p\tProfile name"+"\n" )
 	STDOUT.puts( "\t--file\t\t-i\tFilename to use as source"+"\n" )
-	STDOUT.puts( "\t--host\t-H\tHost (cert) name"+"\n" )
+	STDOUT.puts( "\t--host\t\t-H\tHost (cert) name"+"\n" )
 
 end
 

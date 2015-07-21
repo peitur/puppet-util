@@ -10,7 +10,7 @@ The admin command used to manage the different profiles through the command line
 ```
 bin/encadm help
 encadm <task> <options>
-Supported task are [add|del|mod|list|fetch|help]
+Supported task are [add|del|mod|list|fetch|bind|help]
 
 Tasks:
         add     Add a prfile and filename       Requires:[profile,file]
@@ -18,12 +18,14 @@ Tasks:
         mod     Modify existing profile         Requires:[profile, file]
         list    List available profiles         Requires:[]
         fetch   Fetch a profile content         Requires:[profile]
-
+        bind    Bind a host to a profile        Requires:[host,profile]
+        
 Options:
         --help          -h      This help
         --debug         -d      Enable debugging
         --profile       -p      Profile name
         --file          -i      Filename to use as source
+        --host          -H      Host (cert) name        
 ```
 
 
