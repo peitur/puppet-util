@@ -10,6 +10,7 @@ class DirDatabase < AbstractEncDatabase
         super( 'dir', conf, debug )
 
     	if( @config.key?('dir.db') and not Dir.exists?( @config.key('dir.db') ) )
+    		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Initializing storage: "+ @config.key( 'dir.db' ) if( @debug )
 	    	FileUtils.mkdir_p( @config.key('dir.db') ) 
 	    end
         
@@ -112,26 +113,47 @@ class DirDatabase < AbstractEncDatabase
     # Creates a profile with content config. 
     # Config must be in json format.
     def insert( profile, config )
-
+    
+        return false if( not config )
+        
         dir = @config.key( 'dir.db' )
         filename = dir+"/"+profile+".json"
         
-        fd = File.new( filename, mode="w" )
-        fd.write( config )
-        fd.close()
-
+        begin
+            fd = File.new( filename, mode="w" )
+            fd.write( config )
+            fd.close()
+        
+            return true
+            
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not copy profile #{profile} data to #{filenmae} : "+error.to_s+"\n"
+        end
+        
     end
     
     ## Deletes a host or profile
     def delete( what )
+        
+        return false if( not what )
+        
         dir = @config.key( 'dir.db' )
         filename = dir+"/"+what+JSON_ENDING
         
-        if( File.symlink?( filename ) )
-            File.unlink( filename ) 
-        else
-            File.unlink( filename ) if( File.exists?( filename ) )
-        end    
+        return false if( not File.exists?( filename ) )
+        
+        begin
+            if( File.symlink?( filename ) )
+                File.unlink( filename ) 
+            else
+                File.unlink( filename ) if( File.exists?( filename ) )
+            end    
+    
+            return true
+    
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{what}: "+error.to_s+"\n"
+        end
     end
     
     
