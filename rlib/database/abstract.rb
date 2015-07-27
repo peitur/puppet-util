@@ -16,11 +16,19 @@ class AbstractEncDatabase
         
     end
 
+    def close()
+        return nil
+    end
+
     def initdb()
         return nil
     end
 
     def dropdb()
+        return nil
+    end
+
+    def connect()
         return nil
     end
 

@@ -52,9 +52,8 @@ class SqliteDatabase < AbstractEncDatabase
 	    	SQLite3::Database.new( @db )
 	    	handle = SQLite3::Database.open( @db )
 	    
-	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_profiles( id INTEGER PRIMARY KEY, name TEXT, value TEXT, description TEXT )" )
-	   		handle.execute( "CREATE TABLE IF NOT EXISTS enc_apply( cert_id INT, profile_id INT, description TEXT )" )
-	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_certs( id INTEGER PRIMARY KEY, name TEXT, description TEXT )" )
+	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_profiles( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, value TEXT )" )
+	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_hosts( id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER, host TEXT UNIQUE  )" )
 
 	    	handle.close()
     
@@ -71,26 +70,66 @@ class SqliteDatabase < AbstractEncDatabase
 
 
 
+    def dropdb()
+        
+        return true
+    end
+
 
     def search( pattern )
-    
+        squery_host = "SELECT enc_hosts.host, enc_profiles.name,enc_profiles.value  FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
+        return nil
+    end
+
+    def profile( name )
+        return fetch( name )
     end
     
-    def load_profile( name )
-    
+    def db
+        return @config["#{engine}.db"]
     end
-    
-    
+
+
     def insert( profile, config )
+        
+        iquery = "INSERT INTO enc_profiles(name, value) VALUES( '#{profile}', '#{config}' )"
+        
     end
     
     def delete( profile )
+        return nil
     end
     
     def update( profile, config )
+        return nil
     end
     
     def fetch( profile )
+        squery = "SELECT name,value FROM enc_profiles WHERE enc_profiles.name = '#{profile}'"
+        return nil
     end
     
+    def list()
+        
+        squery_profile = "SELECT name FROM enc_profiles ORDER BY name"
+        squery_host = "SELECT enc_hosts.host, enc_profiles.name  FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
+        
+        return nil
+    end
+    
+    def bind( hostname, profile )
+        
+        profile_id = nil
+        
+        squery_profile = "SELECT id,name FROM enc_profiles WHERE enc.profile = '#{profile}'"
+        ## If profile query returns nothing, raise exceptions, can not bind to a profile that does not exist.
+        
+        if( profile_id )
+            iquery_bind = "INSERT INTO enc_hosts( host, profile_id ) VALUES( '#{hostname}','#{profile_id}')"
+        end
+        
+        return nil
+    end
+    
+
 end

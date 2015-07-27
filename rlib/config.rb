@@ -7,7 +7,7 @@ class EncConfig
    DEFAULT_CT = "parameters"
    DEFAULT_DEBUG = false
    DEFAULT_MATCH = "strict"
-   DEFAULT_ENGINE = "db"
+   DEFAULT_ENGINE = "dir"
  
    
     @@defaults = {
@@ -33,15 +33,18 @@ class EncConfig
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Loading configuration from #{@filename}") if( @debug )
         
         begin
-            @config = EncUtil.load_json( @filename )
+            @config = EncUtil.load_json( @filename, @debug )
 
-            @config['enc.env'] = DEFAULT_ENV if( not @config.key?( 'enc.env') )
-            @config['enc.ctype'] = DEFAULT_CT if( not @config.key?( 'enc.ctype') )
-            @config['enc.debug'] = DEFAULT_DEBUG if( not @config.key?( 'enc.debug') )
-            @config['enc.match'] = DEFAULT_MATCH if( not @config.key?( 'enc.match') )
-            @config['enc.engine'] = DEFAULT_ENGINE if( not @config.key?( 'enc.engine') )
-
-        rescue error
+            if( @config )
+                @config['enc.env'] = DEFAULT_ENV if( not @config.key?( 'enc.env') )
+                @config['enc.ctype'] = DEFAULT_CT if( not @config.key?( 'enc.ctype') )
+                @config['enc.debug'] = DEFAULT_DEBUG if( not @config.key?( 'enc.debug') )
+                @config['enc.match'] = DEFAULT_MATCH if( not @config.key?( 'enc.match') )
+                @config['db.engine'] = DEFAULT_ENGINE if( not @config.key?( 'enc.engine') )
+            else
+                raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not load configuration object from file #{filename}: "+"\n"
+            end
+        rescue => error
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not load configuration #{filename}: "+error.to_s+"\n"
         end
     end

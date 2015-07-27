@@ -4,21 +4,38 @@ require "fileutils"
 class DirDatabase < AbstractEncDatabase
     JSON_ENDING = ".json"
 
+
+
     def initialize( conf, debug )
         super( 'dir', conf, debug )
+
+    	if( @config.key?('dir.db') and not Dir.exists?( @config.key('dir.db') ) )
+	    	FileUtils.mkdir_p( @config.key('dir.db') ) 
+	    end
+        
 		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using directory based host lookup : "+ @config.key( 'dir.db' ) if( @debug )
     end
 
+    ## Initialize the databsae structure.
+    ## This module will initialize the directory path, i.e. it will create the directory found in the configuration.
     def initdb()    	
-    	if( @config['dir.db'] )
-	    	FileUtils.mkdir_p( @config['dir.db'] ) if( not Dir.exists?( @config['dir.db'] ) )
+    	if( @config.key?('dir.db') )
+	    	FileUtils.mkdir_p( @config.key('dir.db') ) if( not Dir.exists?( @config.key('dir.db') ) )
 	    else
-    		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Can not initialize db : "+@config['dir.db']+"\n"
+    		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Can not initialize db : "+@config.key('dir.db')+"\n"
 	    end
     end
 
-        
+    def connect( )
+        return true
+    end
+    
+    def terminate( )
+        return true
+    end
+    
     ## Scan the enc directory for a pattern file
+    # Returns list of files
     def search( pattern )
     	return nil if ! pattern
         return nil if ! @config.key?( 'dir.db' )
@@ -47,7 +64,8 @@ class DirDatabase < AbstractEncDatabase
     	return filelist
     end
     
-
+    
+    ## Loads the profile structure from file to
     def load_profile( name )
         return nil if ! name
         return nil if ! @config.key?( 'dir.db' )
@@ -90,6 +108,9 @@ class DirDatabase < AbstractEncDatabase
 
     end
 
+    ##
+    # Creates a profile with content config. 
+    # Config must be in json format.
     def insert( profile, config )
 
         dir = @config.key( 'dir.db' )
@@ -101,6 +122,7 @@ class DirDatabase < AbstractEncDatabase
 
     end
     
+    ## Deletes a host or profile
     def delete( what )
         dir = @config.key( 'dir.db' )
         filename = dir+"/"+what+JSON_ENDING
@@ -112,6 +134,9 @@ class DirDatabase < AbstractEncDatabase
         end    
     end
     
+    
+    ##
+    # Updates a host or profile 
     def update( profile, config )
 
         dir = @config.key( 'dir.db' )
@@ -127,10 +152,15 @@ class DirDatabase < AbstractEncDatabase
         
     end
     
+    ##
+    # Alias for load_profile( profile )
     def fetch( profile )
         return load_profile( profile )
     end
     
+    ##
+    # Gets a list of profiles and hosts. Symbolic lists at considered to be host bindings and actual files are profiles.
+    # Returns: hash of two keys containing individual lists lists, profile and host.
     def list()
         dir = @config.key( 'dir.db' )
     	filelist = Hash.new()
@@ -159,6 +189,8 @@ class DirDatabase < AbstractEncDatabase
     end
     
 
+    ##
+    # Returns a two element array, profile and the host file (symlink) is has created. 
     def bind( hostname, profile )
         dir = @config.key( 'dir.db' )
 
