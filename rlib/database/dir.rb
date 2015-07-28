@@ -121,7 +121,7 @@ class DirDatabase < AbstractEncDatabase
         
         begin
             fd = File.new( filename, mode="w" )
-            fd.write( config )
+            fd.write( JSON.generate( config ) )
             fd.close()
         
             return true
@@ -161,17 +161,24 @@ class DirDatabase < AbstractEncDatabase
     # Updates a host or profile 
     def update( profile, config )
 
+        return false if( not profile )
+        return false if( not config )
+
         dir = @config.key( 'dir.db' )
         filename = dir+"/"+profile+".json"
-
         return nil if( not File.exists?( filename ) )
         
-        File.unlink( filename )
-        
-        fd = File.new( filename, mode="w" )
-        fd.write( config )
-        fd.close()
-        
+        begin
+            File.unlink( filename )
+            
+            fd = File.new( filename, mode="w" )
+            fd.write( JSON.generate( config ) )
+            fd.close()
+            
+            return true
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not update profile #{profile} data with new data : "+error.to_s+"\n"
+        end
     end
     
     ##
