@@ -8,7 +8,7 @@ require "database/dir"
 class TestDatabaseDir < Test::Unit::TestCase
     
     @@prepare = true
-    @@cleanup = false
+    @@cleanup = true
     DIR_PROFILES = ["dd.domain.com", "test00.test.com","default"]
     DIR_HOSTS = [
             ["demo1.dot.com","dd.domain.com"],  #ok
@@ -109,6 +109,8 @@ class TestDatabaseDir < Test::Unit::TestCase
     end
     
     def test_list
+        
+        
         
     end
     
