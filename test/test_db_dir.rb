@@ -57,6 +57,13 @@ class TestDatabaseDir < Test::Unit::TestCase
     end
 
     def test_profile
+        ok_string = '{"hostname":"test1.domain.com","ntp":["time11.domain.com","time12.domain.com"]}'
+        ok_profile = "default"
+        nok_profile = "missing"
+        ok_reply = JSON.parse( ok_string )
+        
+        assert_equal( ok_reply, @db.fetch( ok_profile ) )
+        assert_raise do @db.fetch( nok_profile ) end
     end
     
     def test_db
