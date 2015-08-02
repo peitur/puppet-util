@@ -1,4 +1,6 @@
 
+require 'sqlite3'
+
 require "database/abstract"
 require "fileutils"
 
@@ -6,9 +8,8 @@ require "fileutils"
 class SqliteDatabase < AbstractEncDatabase
 
 	## Pease ensure that the sqlite3 package for ruby is installed
-    require 'sqlite3'
     
-    @@handle = nil
+    @dbhandle = nil
     def initialize( conf, debug )
          super( 'sqlite', conf, debug )
          
@@ -18,7 +19,7 @@ class SqliteDatabase < AbstractEncDatabase
     			initdb()
     		end
 
-            @@handle = SQLite3::Database.open( @db )
+            @dbhandle = SQLite3::Database.open( @db )
 
             STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using SQLite based host lookup : "+ @config.key( 'sqlite.db' ) if( @debug )
         rescue => error
@@ -28,8 +29,8 @@ class SqliteDatabase < AbstractEncDatabase
     end
     
     def terminate( )
-        if( @@handle )
-            @@handle.close()
+        if( @dbhandle )
+            @dbhandle.close()
             return true
         end
         
@@ -92,12 +93,42 @@ class SqliteDatabase < AbstractEncDatabase
 
     def insert( profile, config )
         
+        return false if( not profile )
+        return false if( not config )
+        
         iquery = "INSERT INTO enc_profiles(name, value) VALUES( '#{profile}', '#{config}' )"
+        begin
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not register profile #{profile} : "+error.to_s+"\n"
+        end
         
     end
     
     def delete( profile )
-        return nil
+
+        return false if( not profile )
+        
+        iquery = "DELETE FROM enc_profiles WHERE name = '#{profile}'"
+        begin
+        
+            if( not fetch( profile ) )
+                return false
+            end
+            
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{what}: "+error.to_s+"\n"    
+        end
+        
     end
     
     def update( profile, config )
@@ -106,7 +137,7 @@ class SqliteDatabase < AbstractEncDatabase
     
     def fetch( profile )
         squery = "SELECT name,value FROM enc_profiles WHERE enc_profiles.name = '#{profile}'"
-        return nil
+        return true
     end
     
     def list()

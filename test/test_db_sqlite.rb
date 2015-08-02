@@ -11,8 +11,9 @@ class TestDatabaseSqlite < Test::Unit::TestCase
     
     @@prepare = true
     @@cleanup = true
-    @@debug = false
+    @@debug = true
     DIR_PROFILES = ["dd.domain.com", "test00.test.com","default"]
+
     DIR_HOSTS_OK = {
             "demo1.dot.com" => "dd.domain.com",  #ok
             "demo2.dot.com" => "dd.domain.com",  #ok
@@ -38,7 +39,7 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         FileUtils.rmtree( File.dirname( @conf.key( "sqlite.db" ) ) ) if( @@cleanup )
     end
    
-    def test_search
+    def xtest_search
         DIR_PROFILES.each do |profile|
             assert_equal( [profile+".json"] , @db.search( profile ))
         end
@@ -47,10 +48,10 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( nil, @db.search( nil ) )
     end
 
-    def test_profile
+    def xtest_profile
     end
     
-    def test_db
+    def xtest_db
         
     end
 
@@ -63,11 +64,11 @@ class TestDatabaseSqlite < Test::Unit::TestCase
             assert_equal( true, @db.insert( profile, data ))
         end
         
-        assert_equal( false, @db.insert( "noprofile", EncUtil.load_json( "noprofile" )) )
+        assert_equal( false, @db.insert( "noprofile", nil ) )
         assert_equal( false, @db.insert( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def test_delete
+    def xtest_delete
         @@prepare = true
 
         DIR_PROFILES.each do |profile|
@@ -78,8 +79,8 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( false, @db.delete( "noprofile" ) )
         assert_equal( false, @db.delete( nil ) )
     end
-    
-    def test_update
+
+    def xtest_update
 
         ## overwrite second in list with first in list
         src = @conf.key( "dir.db" )+"/"+DIR_PROFILES[0]+".json"
@@ -96,7 +97,7 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( false, @db.update( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def test_fetch
+    def xtest_fetch
         ok_string = '{"hostname":"test1.domain.com","ntp":["time11.domain.com","time12.domain.com"]}'
         ok_profile = "default"
         nok_profile = "missing"
@@ -106,12 +107,12 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_raise do @db.fetch( nok_profile ) end
     end
     
-    def test_list
+    def xtest_list
         
 
     end
     
-    def test_bind
+    def xtest_bind
 
         DIR_HOSTS_OK.each do |host, profile|
             assert_equal( [profile+".json", host+".json"] , @db.bind( host, profile ) )

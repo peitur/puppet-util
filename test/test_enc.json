@@ -3,7 +3,7 @@
   "enc.match" : "strict",
   "enc.env"   : "production",
   "enc.ctype" : "parameters",
-  "db.engine" : "dir",
+  "db.engine" : "sqlite",
   "dir.db"    : "../test/temp/dir",
   "sqlite.db" : "../test/temp/sqlite/enc.db"
 }
