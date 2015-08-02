@@ -4,6 +4,6 @@
   "enc.env"   : "production",
   "enc.ctype" : "parameters",
   "db.engine" : "dir",
-  "dir.db" : "../test/temp/dir",
-  "sqlite.db" : "test/temp/sqlite/enc.db"
+  "dir.db"    : "../test/temp/dir",
+  "sqlite.db" : "../test/temp/sqlite/enc.db"
 }
