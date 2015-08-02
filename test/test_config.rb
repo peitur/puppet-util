@@ -5,11 +5,11 @@ require "test/unit"
 
 class TestDatabaseDir < Test::Unit::TestCase
     
-
+    @@debug = false
     def setup()
         
         filename = "test_enc.json"
-        @conf = EncConfig.new( filename, true )
+        @conf = EncConfig.new( filename, @@debug )
     end
    
     def teardown()

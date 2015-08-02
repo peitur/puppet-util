@@ -3,35 +3,41 @@ require "fileutils"
 require "config"
 require 'json'
 require "test/unit"
+
+require "database"
 require "database/dir"
 
 class TestDatabaseDir < Test::Unit::TestCase
     
     @@prepare = true
     @@cleanup = true
+    @@debug = false
     DIR_PROFILES = ["dd.domain.com", "test00.test.com","default"]
-    DIR_HOSTS = [
-            ["demo1.dot.com","dd.domain.com"],  #ok
-            ["demo2.dot.com","dd.domain.com"],  #ok
-            ["demo3.dot.com","test00.test.com"],#ok
-            ["demo1.dot.com","test00.test.com"],#fail, host already exists
-            ["demoF2.dot.com","missing.test.com"],#fail, missing profile
-            ["all","default"] #ok
-        ]
+    DIR_HOSTS_OK = {
+            "demo1.dot.com" => "dd.domain.com",  #ok
+            "demo2.dot.com" => "dd.domain.com",  #ok
+            "demo3.dot.com" => "test00.test.com", #ok
+            "all" => "default" #ok
+    } 
+    
+    DIR_HOSTS_NOK = {
+            "demo1.dot.com" => "test00.test.com", #fail, host already exists
+            "demoF2.dot.com" => "missing.test.com", #fail, missing profile
+    }
 
 #    DIR_PROFILES = []
     
     def setup()
         filename = "../test/test_enc.json"
-        @conf = EncConfig.new( filename, true )
-        @db = DirDatabase.new( @conf, true )
+        @conf = EncConfig.new( filename, @@debug )
+        @db = DirDatabase.new( @conf, @@debug )
  
         if( @@prepare )
             DIR_PROFILES.each do |fname|
                 src = File.dirname( __FILE__ )+"/"+fname+".json"
                 dst = @conf.key( "dir.db" )+"/"+fname+".json"
                 
-                puts "COPY "+src+" => "+dst+"\n"
+                puts "COPY "+src+" => "+dst+"\n" if @@debug
                 FileUtils.copy( src, dst )
             end
         end
@@ -42,7 +48,12 @@ class TestDatabaseDir < Test::Unit::TestCase
     end
    
     def test_search
-        pattern = ""
+        DIR_PROFILES.each do |profile|
+            assert_equal( [profile+".json"] , @db.search( profile ))
+        end
+        
+        assert_equal( [], @db.search( "noprofile" ) )
+        assert_equal( nil, @db.search( nil ) )
     end
 
     def test_profile
@@ -100,23 +111,27 @@ class TestDatabaseDir < Test::Unit::TestCase
         nok_profile = "missing"
         ok_reply = JSON.parse( ok_string )
         
-        begin 
-            assert_equal( ok_reply, @db.fetch( ok_profile ) )
-            assert_equal( false, @db.fetch( nok_profile ) )
-        rescue => error
-             STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: TEST  : "+error.to_s+"\n" )
-        end
+        assert_equal( ok_reply, @db.fetch( ok_profile ) )
+        assert_raise do @db.fetch( nok_profile ) end
     end
     
     def test_list
         
-        
-        
+
     end
     
     def test_bind
-        hostname = ""
-        profile = ""
+
+        DIR_HOSTS_OK.each do |host, profile|
+            assert_equal( [profile+".json", host+".json"] , @db.bind( host, profile ) )
+        end
+
+        DIR_HOSTS_NOK.each do |host, profile|
+            assert_raise do @db.bind( host, profile ) end
+        end
+
+        assert_equal( nil, @db.bind( nil, "default" ) )
+        assert_equal( nil, @db.bind( "demoC.dot.com", nil ) )
     end
     
    

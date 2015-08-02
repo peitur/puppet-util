@@ -221,6 +221,9 @@ class DirDatabase < AbstractEncDatabase
     ##
     # Returns a two element array, profile and the host file (symlink) is has created. 
     def bind( hostname, profile )
+        return nil if( ! hostname )
+        return nil if( ! profile )
+        
         dir = @config.key( 'dir.db' )
 
         profile_file = dir+"/"+profile+JSON_ENDING
@@ -228,7 +231,7 @@ class DirDatabase < AbstractEncDatabase
       
         if( File.exists?( profile_file ) )
             File.symlink( profile_file, host_file )
-            return [ profile_file, host_file ]
+            return [ profile+JSON_ENDING, hostname+JSON_ENDING ]
         else
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile} to bind with host #{hostname}"+"\n"
         end
