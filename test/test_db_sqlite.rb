@@ -12,7 +12,8 @@ class TestDatabaseSqlite < Test::Unit::TestCase
     @@prepare = true
     @@cleanup = true
     @@debug = true
-    DIR_PROFILES = ["dd.domain.com", "test00.test.com","default"]
+    DIR_PROFILES        = ["dd.domain.com", "test00.test.com","default"]
+    DIR_PROFILES_PREP   = ["dd1.domain.com", "test01.test.com","default1"]
 
     DIR_HOSTS_OK = {
             "demo1.dot.com" => "dd.domain.com",  #ok
@@ -32,6 +33,14 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         filename = "../test/test_enc.json"
         @conf = EncConfig.new( filename, @@debug )
         @db = SqliteDatabase.new( @conf, @@debug )
+
+        if( @@prepare )
+            DIR_PROFILES_PREP.each do |profile|
+                infile = File.dirname( __FILE__ )+"/"+profile+".json"
+                data = EncUtil.load_json( infile )
+                @db.insert( profile, data )
+            end
+        end
  
     end
    
@@ -68,11 +77,16 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( false, @db.insert( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def xtest_delete
+    def test_delete
         @@prepare = true
 
         DIR_PROFILES.each do |profile|
             infile = File.dirname( __FILE__ )+"/"+profile+".json"
+            data = EncUtil.load_json( infile )
+            assert_equal( true, @db.insert( profile, data ))
+        end
+
+        DIR_PROFILES.each do |profile|
             assert_equal( true, @db.delete( profile ))
         end
         
@@ -97,11 +111,18 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( false, @db.update( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def xtest_fetch
+    def test_fetch
         ok_string = '{"hostname":"test1.domain.com","ntp":["time11.domain.com","time12.domain.com"]}'
         ok_profile = "default"
         nok_profile = "missing"
         ok_reply = JSON.parse( ok_string )
+
+        DIR_PROFILES.each do |profile|
+            infile = File.dirname( __FILE__ )+"/"+profile+".json"
+            data = EncUtil.load_json( infile )
+            assert_equal( true, @db.insert( profile, data ))
+        end
+
         
         assert_equal( ok_reply, @db.fetch( ok_profile ) )
         assert_raise do @db.fetch( nok_profile ) end
@@ -112,10 +133,16 @@ class TestDatabaseSqlite < Test::Unit::TestCase
 
     end
     
-    def xtest_bind
+    def test_bind
+        DIR_PROFILES.each do |profile|
+            infile = File.dirname( __FILE__ )+"/"+profile+".json"
+            data = EncUtil.load_json( infile )
+            assert_equal( true, @db.insert( profile, data ))
+        end
+
 
         DIR_HOSTS_OK.each do |host, profile|
-            assert_equal( [profile+".json", host+".json"] , @db.bind( host, profile ) )
+            assert_equal( [profile, host] , @db.bind( host, profile ) )
         end
 
         DIR_HOSTS_NOK.each do |host, profile|
