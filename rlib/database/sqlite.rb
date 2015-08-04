@@ -177,19 +177,37 @@ class SqliteDatabase < AbstractEncDatabase
 
         ## Since a false is expected when no profile is found to delete, an extra check is needed.
         ## This should be changed
-        begin
-            fetch( profile )
-        rescue => error
-            return false
-        end
-        
-        iquery = "DELETE FROM enc_profiles WHERE name = '#{profile}'"
+        iquery_profile = "DELETE FROM enc_profiles WHERE name = '#{profile}'"
+        iquery_host = "DELETE FROM enc_hosts WHERE host = '#{profile}'"
+        iquery_xec = Array.new()
+
         begin
 
-            @dbhandle.transaction
-            @dbhandle.execute( iquery )
-            @dbhandle.commit
-            
+            squery_host    = "SELECT host as name FROM enc_hosts WHERE name = '#{profile}'"
+            squery_profile = "SELECT name as name FROM enc_profiles WHERE name = '#{profile}'"
+        
+            rsH = @dbhandle.execute( squery_host )
+            rsP = @dbhandle.execute( squery_profile )
+            rsN = [rsH.length, rsP.length]
+
+            iquery_xec.push( iquery_profile ) if( rsP.length() > 0 )
+            iquery_xec.push( iquery_host )    if( rsH.length() > 0 )
+
+            return false  if( iquery_xec.length == 0 )
+        rescue => error
+            STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Nothing found to delete "+rsN.to_s+": "+error.to_s+"\n" ) if( @debug )
+            return false
+        end
+
+
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Deleting query: "+iquery_xec.to_s()+"\n" ) if( @debug )
+        begin
+            iquery_xec.each do |iquery|
+                @dbhandle.transaction
+                @dbhandle.execute( iquery )
+                @dbhandle.commit
+            end
+
             return true
         rescue => error
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{profile}: "+error.to_s+"\n"    
