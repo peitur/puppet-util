@@ -79,9 +79,27 @@ class SqliteDatabase < AbstractEncDatabase
 
 
     def search( pattern )
-        squery_host = "SELECT enc_hosts.host as host, enc_profiles.name as profile, enc_profiles.value as value FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
-        return nil
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Searching for #{pattern}\n" ) if( @debug )
+
+        return nil if( not pattern )
+
+        squery_search = "SELECT enc_hosts.host as host, enc_profiles.name as profile, enc_profiles.value as value FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
+        
+        result = Array.new()
+
+        begin
+            rsX = @dbhandle.execute( squery_search )
+            rsX.each do |row|
+                result.push( row['profile'] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Search profile #{pattern} failed: "+error.to_s+"\n"
+        end
+
+        return result
     end
+
+
 
     def load_profile( name )
 
@@ -116,7 +134,7 @@ class SqliteDatabase < AbstractEncDatabase
     		return nodedata
             
         rescue => error
-            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"           
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
         end
 
     end
@@ -180,7 +198,22 @@ class SqliteDatabase < AbstractEncDatabase
     end
     
     def update( profile, config )
-        return nil
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Updating profile #{profile} with config "+config.to_s+" \n" ) if( @debug )
+
+        return false if( not profile )
+        return false if( not config )
+        
+        config_json_str = JSON.generate( config )
+        iquery = "UPDATE enc_profiles SET value = '#{config_json_str}' WHERE name = '#{profile}' "
+        begin
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not update profile #{profile} : "+error.to_s+"\n"
+        end
     end
     
 
@@ -188,9 +221,35 @@ class SqliteDatabase < AbstractEncDatabase
     def list()
         
         squery_profile = "SELECT name FROM enc_profiles ORDER BY name"
-        squery_host = "SELECT enc_hosts.host, enc_profiles.name  FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
+        squery_host = "SELECT enc_hosts.host as host, enc_profiles.name as profile FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
         
-        return nil
+        result = Hash.new()
+        result['profile'] = Array.new()
+        result['host'] = Array.new()    
+
+        ## First just get all unique profiles
+        begin
+            rsX = @dbhandle.execute( squery_profile )
+            rsX.each do |row|
+                result['profile'].push( row['name'] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+        end
+
+        ## Get all hosts with their corresponding profiles
+        begin
+            rsX = @dbhandle.execute( squery_host )
+            rsX.each do |row|
+                result['host'].push( [row['host'], row['profile']] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+        end
+
+
+        return result
+        
     end
     
     def bind( hostname, profile )

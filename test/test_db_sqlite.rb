@@ -48,9 +48,20 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         FileUtils.rmtree( File.dirname( @conf.key( "sqlite.db" ) ) ) if( @@cleanup )
     end
    
-    def xtest_search
+    def test_search
         DIR_PROFILES.each do |profile|
-            assert_equal( [profile+".json"] , @db.search( profile ))
+            infile = File.dirname( __FILE__ )+"/"+profile+".json"
+            data = EncUtil.load_json( infile )
+            assert_equal( true, @db.insert( profile, data ))
+        end
+
+
+        DIR_HOSTS_OK.each do |host, profile|
+            assert_equal( [profile, host] , @db.bind( host, profile ) )
+        end
+
+        DIR_HOSTS_OK.each do |host, profile|
+            assert_equal( [profile] , @db.search( host ))
         end
         
         assert_equal( [], @db.search( "noprofile" ) )
@@ -94,10 +105,21 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         assert_equal( false, @db.delete( nil ) )
     end
 
-    def xtest_update
+    def test_update
+        DIR_PROFILES.each do |profile|
+            infile = File.dirname( __FILE__ )+"/"+profile+".json"
+            data = EncUtil.load_json( infile )
+            assert_equal( true, @db.insert( profile, data ))
+        end
+
+
+        DIR_HOSTS_OK.each do |host, profile|
+            assert_equal( [profile, host] , @db.bind( host, profile ) )
+        end
+
 
         ## overwrite second in list with first in list
-        src = @conf.key( "dir.db" )+"/"+DIR_PROFILES[0]+".json"
+        src = DIR_PROFILES[0]+".json"
         dprofile = DIR_PROFILES[1]
         assert_equal( true, @db.update( dprofile, EncUtil.load_json( src ) ) )
 

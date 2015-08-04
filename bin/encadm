@@ -188,7 +188,8 @@ opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
   [ '--debug', '-d', GetoptLong::NO_ARGUMENT ],
   [ '--profile', '-p', GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--host', '-H', GetoptLong::OPTIONAL_ARGUMENT ]
+  [ '--host', '-H', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--file', '-i', GetoptLong::OPTIONAL_ARGUMENT ],
 )
 
 opts.each do |opt, arg|
