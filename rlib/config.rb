@@ -40,7 +40,7 @@ class EncConfig
                 @config['enc.ctype'] = DEFAULT_CT if( not @config.key?( 'enc.ctype') )
                 @config['enc.debug'] = DEFAULT_DEBUG if( not @config.key?( 'enc.debug') )
                 @config['enc.match'] = DEFAULT_MATCH if( not @config.key?( 'enc.match') )
-                @config['db.engine'] = DEFAULT_ENGINE if( not @config.key?( 'enc.engine') )
+                @config['db.engine'] = DEFAULT_ENGINE if( not @config.key?( 'db.engine') )
             else
                 raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not load configuration object from file #{filename}: "+"\n"
             end

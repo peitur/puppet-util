@@ -1,4 +1,6 @@
 
+require 'sqlite3'
+
 require "database/abstract"
 require "fileutils"
 
@@ -6,9 +8,8 @@ require "fileutils"
 class SqliteDatabase < AbstractEncDatabase
 
 	## Pease ensure that the sqlite3 package for ruby is installed
-    require 'sqlite3'
     
-    @@handle = nil
+    @dbhandle = nil
     def initialize( conf, debug )
          super( 'sqlite', conf, debug )
          
@@ -18,8 +19,9 @@ class SqliteDatabase < AbstractEncDatabase
     			initdb()
     		end
 
-            @@handle = SQLite3::Database.open( @db )
-
+            @dbhandle = SQLite3::Database.open( @db )
+            @dbhandle.results_as_hash = true
+            
             STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using SQLite based host lookup : "+ @config.key( 'sqlite.db' ) if( @debug )
         rescue => error
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
@@ -28,8 +30,8 @@ class SqliteDatabase < AbstractEncDatabase
     end
     
     def terminate( )
-        if( @@handle )
-            @@handle.close()
+        if( @dbhandle )
+            @dbhandle.close()
             return true
         end
         
@@ -77,13 +79,69 @@ class SqliteDatabase < AbstractEncDatabase
 
 
     def search( pattern )
-        squery_host = "SELECT enc_hosts.host, enc_profiles.name,enc_profiles.value  FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
-        return nil
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Searching for #{pattern}\n" ) if( @debug )
+
+        return nil if( not pattern )
+
+        squery_search = "SELECT enc_hosts.host as host, enc_profiles.name as profile, enc_profiles.value as value FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
+        
+        result = Array.new()
+
+        begin
+            rsX = @dbhandle.execute( squery_search )
+            rsX.each do |row|
+                result.push( row['profile'] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Search profile #{pattern} failed: "+error.to_s+"\n"
+        end
+
+        return result
     end
 
-    def profile( name )
-        return fetch( name )
+
+
+    def load_profile( name )
+
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Loading profile #{name}\n" ) if( @debug )
+
+        return false if( not name )
+        
+        squery = "SELECT id,name,value FROM enc_profiles WHERE enc_profiles.name = '#{name}'"
+    
+        begin
+            rsX = @dbhandle.execute( squery )
+            if( rsX.length() == 0 )
+                raise RuntimeError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile}"+"\n"
+#                return false
+            end
+
+    		nodedata = JSON.parse( rsX[0]["value"] )
+
+    		if( @config != nil and nodedata != nil and nodedata.key?("include") )
+    			include_profile = nodedata["include"]
+    			
+    			self.load_profile( include_profile ).each do |k,v|
+    				if( ! nodedata.key?( k ) )
+    					nodedata[k] = v
+    				end
+    			end
+    			
+    			STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Including #{include_profile}" if( @debug )
+    			nodedata.delete( "include" )
+    		end
+    
+    		return nodedata
+            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
+        end
+
     end
+    
+    def fetch( profile )
+        return self.load_profile( profile )
+    end    
     
     def db
         return @config["#{engine}.db"]
@@ -91,41 +149,154 @@ class SqliteDatabase < AbstractEncDatabase
 
 
     def insert( profile, config )
+
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Inserting profile #{profile} with config "+config.to_s+" \n" ) if( @debug )
+
+        return false if( not profile )
+        return false if( not config )
         
-        iquery = "INSERT INTO enc_profiles(name, value) VALUES( '#{profile}', '#{config}' )"
+        config_json_str = JSON.generate( config )
+        iquery = "INSERT INTO enc_profiles(name, value) VALUES( '#{profile}', '#{config_json_str}' )"
+        begin
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not register profile #{profile} : "+error.to_s+"\n"
+        end
         
     end
     
     def delete( profile )
-        return nil
+
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Deleting profile #{profile} \n" ) if( @debug )
+
+        return false if( not profile )
+
+        ## Since a false is expected when no profile is found to delete, an extra check is needed.
+        ## This should be changed
+        begin
+            fetch( profile )
+        rescue => error
+            return false
+        end
+        
+        iquery = "DELETE FROM enc_profiles WHERE name = '#{profile}'"
+        begin
+
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{profile}: "+error.to_s+"\n"    
+        end
+        
     end
     
     def update( profile, config )
-        return nil
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Updating profile #{profile} with config "+config.to_s+" \n" ) if( @debug )
+
+        return false if( not profile )
+        return false if( not config )
+        
+        config_json_str = JSON.generate( config )
+        iquery = "UPDATE enc_profiles SET value = '#{config_json_str}' WHERE name = '#{profile}' "
+        begin
+            @dbhandle.transaction
+            @dbhandle.execute( iquery )
+            @dbhandle.commit
+            
+            return true
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not update profile #{profile} : "+error.to_s+"\n"
+        end
     end
     
-    def fetch( profile )
-        squery = "SELECT name,value FROM enc_profiles WHERE enc_profiles.name = '#{profile}'"
-        return nil
-    end
+
     
     def list()
         
         squery_profile = "SELECT name FROM enc_profiles ORDER BY name"
-        squery_host = "SELECT enc_hosts.host, enc_profiles.name  FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
+        squery_host = "SELECT enc_hosts.host as host, enc_profiles.name as profile FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
         
-        return nil
+        result = Hash.new()
+        result['profile'] = Array.new()
+        result['host'] = Array.new()    
+
+        ## First just get all unique profiles
+        begin
+            rsX = @dbhandle.execute( squery_profile )
+            rsX.each do |row|
+                result['profile'].push( row['name'] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+        end
+
+        ## Get all hosts with their corresponding profiles
+        begin
+            rsX = @dbhandle.execute( squery_host )
+            rsX.each do |row|
+                result['host'].push( [row['host'], row['profile']] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+        end
+
+
+        return result
+        
     end
     
     def bind( hostname, profile )
         
-        profile_id = nil
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Binidng profile #{profile} to host #{hostname} \n" ) if( @debug )
         
-        squery_profile = "SELECT id,name FROM enc_profiles WHERE enc.profile = '#{profile}'"
+        return nil if( not hostname )
+        return nil if( not profile )
+        
+        profile_id = nil
+        begin
+            squery_bind = "SELECT id,name FROM enc_profiles WHERE name ='#{profile}'"
+            rsX = @dbhandle.execute( squery_bind )
+            
+            if( rsX.length() == 0 )
+                raise RuntimeError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile}"+"\n"
+#                return false
+            end
+
+    		profile_id = rsX[0]["id"]
+            
+        rescue => error
+            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: SQL error looing for profile #{profile} to bind to host #{hostname}: "+error.to_s+"\n"    
+        end
+        
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Found binidng profile #{profile} " ) if( @debug )
+        
+        return nil if( not profile_id )
+
         ## If profile query returns nothing, raise exceptions, can not bind to a profile that does not exist.
         
         if( profile_id )
             iquery_bind = "INSERT INTO enc_hosts( host, profile_id ) VALUES( '#{hostname}','#{profile_id}')"
+
+            STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Binding SQL: #{iquery_bind} \n" ) if( @debug )
+
+            begin
+    
+                @dbhandle.transaction
+                @dbhandle.execute( iquery_bind )
+                @dbhandle.commit
+                
+                return [profile, hostname]
+                
+            rescue => error
+                raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{profile}: "+error.to_s+"\n"    
+            end
         end
         
         return nil
