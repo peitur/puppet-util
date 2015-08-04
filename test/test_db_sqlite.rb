@@ -11,7 +11,7 @@ class TestDatabaseSqlite < Test::Unit::TestCase
     
     @@prepare = true
     @@cleanup = true
-    @@debug = true
+    @@debug = false
     DIR_PROFILES        = ["dd.domain.com", "test00.test.com","default"]
     DIR_PROFILES_PREP   = ["dd1.domain.com", "test01.test.com","default1"]
 
@@ -32,7 +32,11 @@ class TestDatabaseSqlite < Test::Unit::TestCase
     def setup()
         filename = "../test/test_enc.json"
         @conf = EncConfig.new( filename, @@debug )
+        @conf.key!( "db.engine", "sqlite")
+
         @db = SqliteDatabase.new( @conf, @@debug )
+
+
 
         if( @@prepare )
             DIR_PROFILES_PREP.each do |profile|

@@ -30,6 +30,8 @@ class TestDatabaseDir < Test::Unit::TestCase
     def setup()
         filename = "../test/test_enc.json"
         @conf = EncConfig.new( filename, @@debug )
+        @conf.key!( "db.engine", "dir")
+
         @db = DirDatabase.new( @conf, @@debug )
  
         if( @@prepare )
