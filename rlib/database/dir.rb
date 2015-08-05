@@ -84,14 +84,18 @@ class DirDatabase < AbstractEncDatabase
     
     			nodedata = JSON.load( File.open( filename ) )
     			if( @config != nil and nodedata != nil and nodedata.key?("include") )
-    				include_profile = nodedata["include"]
+                    include_profiles = nodedata["include"].class.name == "String" ? [nodedata["include"]] : nodedata["include"]
+
+                    include_profiles.each do |include_profile|
     				
-    				self.load_profile( include_profile ).each do |k,v|
-    					if( ! nodedata.key?( k ) )
-    						nodedata[k] = v
-    					end
-    				end
-    				
+        				self.load_profile( include_profile ).each do |k,v|
+        					if( ! nodedata.key?( k ) )
+        						nodedata[k] = v
+        					end
+        				end
+
+                    end
+
     				STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Including #{include_profile}" if( @debug )
     				nodedata.delete( "include" )
     			end
@@ -183,8 +187,32 @@ class DirDatabase < AbstractEncDatabase
     
     ##
     # Alias for load_profile( profile )
-    def fetch( profile )
-        return load_profile( profile )
+    def fetch( name )
+        return nil if ! name
+        return nil if ! @config.key?( 'dir.db' )
+    
+    
+        if( ! /\.json/.match( name ) )
+            name += JSON_ENDING
+        end
+        
+        ## 
+        filename = @config.key( 'dir.db' )+"/"+name
+        if( File.exists?( filename ) or File.symlink?( filename ) )     
+            ## Lets open it and parse it into a config object (hash)
+            begin
+    
+                return JSON.load( File.open( filename ) )
+                
+            rescue => error  ## Catching everything this time, no need to be picky
+                raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
+            end
+        else
+    
+            raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find config file #{filename}"+"\n"
+        
+        end
+        
     end
     
     ##
