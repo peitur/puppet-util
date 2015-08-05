@@ -89,6 +89,7 @@ def profile_list( db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, Missing database connection "+"\n" if( not db )
 
 	begin
+		puts("=================================================================")	
 		filelist = db.list()
 		if( filelist.length() > 0 )
 			puts("Found #{filelist["profile"].length()} profiles and #{filelist["host"].length()} bound hosts")
@@ -106,6 +107,8 @@ def profile_list( db )
 		else
 			puts("No profiles found")
 		end
+		puts("=================================================================")	
+
 	rescue
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, fetching list "+"\n" if( not db )
 	end

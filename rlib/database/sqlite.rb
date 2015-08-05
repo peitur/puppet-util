@@ -264,7 +264,7 @@ class SqliteDatabase < AbstractEncDatabase
     
     def list()
         
-        squery_profile = "SELECT #{@@profile_name} FROM #{@@profile_name} ORDER BY #{@@profile_name}"
+        squery_profile = "SELECT #{@@profile_name} FROM #{@@profile_table} ORDER BY #{@@profile_name}"
         squery_host = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id}"
         
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List profile SQL: #{squery_profile}\n" ) if( @debug )    
