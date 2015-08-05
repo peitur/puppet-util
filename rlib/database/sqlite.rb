@@ -264,16 +264,19 @@ class SqliteDatabase < AbstractEncDatabase
     
     def list()
         
-        squery_profile = "SELECT #{@@profile_name} FROM #{@@profile_table} ORDER BY #{@@profile_name}"
-        squery_host = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id}"
+        squery_profile = "SELECT #{@@profile_name} AS name FROM #{@@profile_table} ORDER BY #{@@profile_name}"
+        squery_host = "SELECT #{@@host_host} AS host FROM #{@@host_table} ORDER BY #{@@host_host}"
+        squery_bound = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id}"
         
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List profile SQL: #{squery_profile}\n" ) if( @debug )    
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List host SQL: #{squery_host}\n" ) if( @debug )    
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List bound SQL: #{squery_bound}\n" ) if( @debug )    
 
 
         result = Hash.new()
         result['profile'] = Array.new()
-        result['host'] = Array.new()    
+        result['host'] = Array.new()
+        result['bound'] = Array.new()    
 
         ## First just get all unique profiles
         begin
@@ -285,16 +288,24 @@ class SqliteDatabase < AbstractEncDatabase
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
         end
 
-        ## Get all hosts with their corresponding profiles
         begin
             rsX = @dbhandle.execute( squery_host )
             rsX.each do |row|
-                result['host'].push( [row['host'], row['profile']] )
+                result['host'].push( row['host'] )
             end            
         rescue => error
-            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing host list failed: "+error.to_s+"\n"
         end
 
+        ## Get all hosts with their corresponding profiles
+        begin
+            rsX = @dbhandle.execute( squery_bound )
+            rsX.each do |row|
+                result['bound'].push( [row['host'], row['profile']] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing bound list failed: "+error.to_s+"\n"
+        end
 
         return result
         
