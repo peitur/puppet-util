@@ -119,13 +119,17 @@ class SqliteDatabase < AbstractEncDatabase
     		nodedata = JSON.parse( rsX[0]["value"] )
 
     		if( @config != nil and nodedata != nil and nodedata.key?("include") )
-    			include_profile = nodedata["include"]
+    			include_profiles = nodedata["include"].class.name == "String" ? [nodedata["include"]] : nodedata["include"]
+
+                include_profiles.each do |include_profile|
     			
-    			self.load_profile( include_profile ).each do |k,v|
-    				if( ! nodedata.key?( k ) )
-    					nodedata[k] = v
-    				end
-    			end
+        			self.load_profile( include_profile ).each do |k,v|
+        				if( ! nodedata.key?( k ) )
+        					nodedata[k] = v
+        				end
+        			end
+
+                end
     			
     			STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Including #{include_profile}" if( @debug )
     			nodedata.delete( "include" )
