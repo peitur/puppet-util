@@ -89,23 +89,31 @@ def profile_list( db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, Missing database connection "+"\n" if( not db )
 
 	begin
+		puts("=================================================================")	
 		filelist = db.list()
 		if( filelist.length() > 0 )
-			puts("Found #{filelist["profile"].length()} profiles and #{filelist["host"].length()} bound hosts")
+			puts("Found #{filelist["profile"].length()} profiles and #{filelist["host"].length()} hosts with #{filelist["bound"].length()} bound hosts")
 
 			puts("Profiles:\n")
 			filelist["profile"].each do |x|
 				puts( "\t>> "+x.to_s+"\n")
 			end
 			
-			puts("Bound hosts:\n")
+			puts("Hosts:\n")
 			filelist["host"].each do |x|
+				puts( "\t>> "+x.to_s+"\n")
+			end
+
+			puts("Bound Hosts:\n")
+			filelist["bound"].each do |x|
 				puts( "\t>> "+x[0].to_s+" => "+x[1].to_s+"\n")
 			end
 			
 		else
 			puts("No profiles found")
 		end
+		puts("=================================================================")	
+
 	rescue
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: List profile, fetching list "+"\n" if( not db )
 	end
@@ -181,8 +189,7 @@ profile = nil
 infile = nil
 hostname = nil
 
-task = ARGV.shift()
-
+task = ARGV[0] ? ARGV.shift() : "list"
 
 opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
@@ -281,7 +288,7 @@ begin
 			print_help()
 			exit()
 	    else
-	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
+	        STDERR.puts("ERROR: No such task: #{task}")
 	        exit(-1)
 	end
 

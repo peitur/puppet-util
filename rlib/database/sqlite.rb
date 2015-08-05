@@ -9,6 +9,17 @@ class SqliteDatabase < AbstractEncDatabase
 
 	## Pease ensure that the sqlite3 package for ruby is installed
     
+    @@profile_table = "enc_profiles"
+    @@host_table = "enc_hosts"
+
+    @@profile_id = "id"
+    @@profile_name = "name"
+    @@profile_value = "value"
+
+    @@host_id = "id"    
+    @@host_host = "host"
+    @@host_profile_id = "profile_id"
+
     @dbhandle = nil
     def initialize( conf, debug )
          super( 'sqlite', conf, debug )
@@ -54,8 +65,8 @@ class SqliteDatabase < AbstractEncDatabase
 	    	SQLite3::Database.new( @db )
 	    	handle = SQLite3::Database.open( @db )
 	    
-	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_profiles( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, value TEXT )" )
-	    	handle.execute( "CREATE TABLE IF NOT EXISTS enc_hosts( id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id INTEGER, host TEXT UNIQUE  )" )
+	    	handle.execute( "CREATE TABLE IF NOT EXISTS #{@@profile_table}( #{@@profile_id} INTEGER PRIMARY KEY AUTOINCREMENT, #{@@profile_name} TEXT UNIQUE, #{@@profile_value} TEXT )" )
+	    	handle.execute( "CREATE TABLE IF NOT EXISTS #{@@host_table}( #{@@host_id} INTEGER PRIMARY KEY AUTOINCREMENT, #{@@host_profile_id} INTEGER, #{@@host_host} TEXT UNIQUE  )" )
 
 	    	handle.close()
     
@@ -83,8 +94,9 @@ class SqliteDatabase < AbstractEncDatabase
 
         return nil if( not pattern )
 
-        squery_search = "SELECT enc_hosts.host as host, enc_profiles.name as profile, enc_profiles.value as value FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id WHERE enc_hosts.host LIKE '#{pattern}'"
-        
+        squery_search = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id} WHERE host LIKE '#{pattern}'"
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Searching SQL #{squery_search}\n" ) if( @debug )
+
         result = Array.new()
 
         begin
@@ -107,8 +119,9 @@ class SqliteDatabase < AbstractEncDatabase
 
         return false if( not name )
         
-        squery = "SELECT id,name,value FROM enc_profiles WHERE enc_profiles.name = '#{name}'"
-    
+        squery = "SELECT id,name,value FROM #{@@profile_table} WHERE #{@@profile_table}.#{@@profile_name} = '#{name}'"
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Load profile SQL: #{squery}\n" ) if( @debug )    
+
         begin
             rsX = @dbhandle.execute( squery )
             if( rsX.length() == 0 )
@@ -143,8 +156,26 @@ class SqliteDatabase < AbstractEncDatabase
 
     end
     
-    def fetch( profile )
-        return self.load_profile( profile )
+    def fetch( name )
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Loading profile #{name}\n" ) if( @debug )
+
+        return false if( not name )
+        
+        squery = "SELECT id,name,value FROM #{@@profile_table} WHERE #{@@profile_table}.#{@@profile_name} = '#{name}'"
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Load profile SQL: #{squery}\n" ) if( @debug )    
+
+        begin
+            rsX = @dbhandle.execute( squery )
+            if( rsX.length() == 0 )
+                raise RuntimeError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile}"+"\n"
+#                return false
+            end
+
+            return JSON.parse( rsX[0]["value"] )
+            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
+        end
     end    
     
     def db
@@ -160,7 +191,9 @@ class SqliteDatabase < AbstractEncDatabase
         return false if( not config )
         
         config_json_str = JSON.generate( config )
-        iquery = "INSERT INTO enc_profiles(name, value) VALUES( '#{profile}', '#{config_json_str}' )"
+        iquery = "INSERT INTO #{@@profile_table}( #{@@profile_name}, #{@@profile_value} ) VALUES( '#{profile}', '#{config_json_str}' )"
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Insert profile SQL: #{iquery}\n" ) if( @debug )    
+
         begin
             @dbhandle.transaction
             @dbhandle.execute( iquery )
@@ -181,15 +214,24 @@ class SqliteDatabase < AbstractEncDatabase
 
         ## Since a false is expected when no profile is found to delete, an extra check is needed.
         ## This should be changed
-        iquery_profile = "DELETE FROM enc_profiles WHERE name = '#{profile}'"
-        iquery_host = "DELETE FROM enc_hosts WHERE host = '#{profile}'"
+        iquery_profile = "DELETE FROM #{@@profile_table} WHERE #{@@profile_name} = '#{profile}'"
+        iquery_host = "DELETE FROM #{@@host_table} WHERE #{@@host_host} = '#{profile}'"
+
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Delete profile SQL: #{iquery_profile}\n" ) if( @debug )    
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Delete host SQL: #{iquery_host}\n" ) if( @debug )    
+
+
         iquery_xec = Array.new()
 
         begin
 
-            squery_host    = "SELECT host as name FROM enc_hosts WHERE name = '#{profile}'"
-            squery_profile = "SELECT name as name FROM enc_profiles WHERE name = '#{profile}'"
+            squery_host    = "SELECT #{@@host_host} as name FROM #{@@host_table} WHERE name = '#{profile}'"
+            squery_profile = "SELECT #{@@profile_name} as name FROM #{@@profile_table} WHERE name = '#{profile}'"
         
+            STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Check Delete host SQL: #{squery_host}\n" ) if( @debug )    
+            STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Check Delete profile SQL: #{squery_profile}\n" ) if( @debug )    
+
+
             rsH = @dbhandle.execute( squery_host )
             rsP = @dbhandle.execute( squery_profile )
             rsN = [rsH.length, rsP.length]
@@ -226,7 +268,9 @@ class SqliteDatabase < AbstractEncDatabase
         return false if( not config )
         
         config_json_str = JSON.generate( config )
-        iquery = "UPDATE enc_profiles SET value = '#{config_json_str}' WHERE name = '#{profile}' "
+        iquery = "UPDATE #{@@profile_table} SET #{@@profile_value} = '#{config_json_str}' WHERE #{@@profile_name} = '#{profile}' "
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Update profile SQL: #{iquery}\n" ) if( @debug )    
+
         begin
             @dbhandle.transaction
             @dbhandle.execute( iquery )
@@ -242,12 +286,19 @@ class SqliteDatabase < AbstractEncDatabase
     
     def list()
         
-        squery_profile = "SELECT name FROM enc_profiles ORDER BY name"
-        squery_host = "SELECT enc_hosts.host as host, enc_profiles.name as profile FROM enc_profiles INNER JOIN enc_hosts ON enc_hosts.profile_id = enc_profiles.id"
+        squery_profile = "SELECT #{@@profile_name} AS name FROM #{@@profile_table} ORDER BY #{@@profile_name}"
+        squery_host = "SELECT #{@@host_host} AS host FROM #{@@host_table} ORDER BY #{@@host_host}"
+        squery_bound = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id} ORDER BY host"
         
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List profile SQL: #{squery_profile}\n" ) if( @debug )    
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List host SQL: #{squery_host}\n" ) if( @debug )    
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List bound SQL: #{squery_bound}\n" ) if( @debug )    
+
+
         result = Hash.new()
         result['profile'] = Array.new()
-        result['host'] = Array.new()    
+        result['host'] = Array.new()
+        result['bound'] = Array.new()    
 
         ## First just get all unique profiles
         begin
@@ -259,16 +310,24 @@ class SqliteDatabase < AbstractEncDatabase
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
         end
 
-        ## Get all hosts with their corresponding profiles
         begin
             rsX = @dbhandle.execute( squery_host )
             rsX.each do |row|
-                result['host'].push( [row['host'], row['profile']] )
+                result['host'].push( row['host'] )
             end            
         rescue => error
-            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing host list failed: "+error.to_s+"\n"
         end
 
+        ## Get all hosts with their corresponding profiles
+        begin
+            rsX = @dbhandle.execute( squery_bound )
+            rsX.each do |row|
+                result['bound'].push( [row['host'], row['profile']] )
+            end            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing bound list failed: "+error.to_s+"\n"
+        end
 
         return result
         
@@ -283,7 +342,8 @@ class SqliteDatabase < AbstractEncDatabase
         
         profile_id = nil
         begin
-            squery_bind = "SELECT id,name FROM enc_profiles WHERE name ='#{profile}'"
+            squery_bind = "SELECT #{@@profile_id},#{@@profile_name} FROM #{@@profile_table} WHERE #{@@profile_name} ='#{profile}'"
+            STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Bind Check profile SQL: #{squery_bind}\n" ) if( @debug )    
             rsX = @dbhandle.execute( squery_bind )
             
             if( rsX.length() == 0 )
@@ -304,8 +364,7 @@ class SqliteDatabase < AbstractEncDatabase
         ## If profile query returns nothing, raise exceptions, can not bind to a profile that does not exist.
         
         if( profile_id )
-            iquery_bind = "INSERT INTO enc_hosts( host, profile_id ) VALUES( '#{hostname}','#{profile_id}')"
-
+            iquery_bind = "INSERT INTO #{@@host_table}( #{@@host_host}, #{@@host_profile_id} ) VALUES( '#{hostname}','#{profile_id}')"
             STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Binding SQL: #{iquery_bind} \n" ) if( @debug )
 
             begin
