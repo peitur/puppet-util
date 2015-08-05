@@ -12,8 +12,8 @@ class TestDatabaseSqlite < Test::Unit::TestCase
     @@prepare = true
     @@cleanup = true
     @@debug = false
-    DIR_PROFILES        = ["dd.domain.com", "test00.test.com","default"]
-    DIR_PROFILES_PREP   = ["dd1.domain.com", "test01.test.com","default1"]
+    DIR_PROFILES        = ["dd.domain.com", "test00.test.com","test01.test.com","default"]
+    DIR_PROFILES_PREP   = ["dd1.domain.com", "test10.test.com","default1"]
 
     DIR_HOSTS_OK = {
             "demo1.dot.com" => "dd.domain.com",  #ok
