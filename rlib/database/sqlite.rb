@@ -152,8 +152,26 @@ class SqliteDatabase < AbstractEncDatabase
 
     end
     
-    def fetch( profile )
-        return self.load_profile( profile )
+    def fetch( name )
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Loading profile #{name}\n" ) if( @debug )
+
+        return false if( not name )
+        
+        squery = "SELECT id,name,value FROM #{@@profile_table} WHERE #{@@profile_table}.#{@@profile_name} = '#{name}'"
+        STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Load profile SQL: #{squery}\n" ) if( @debug )    
+
+        begin
+            rsX = @dbhandle.execute( squery )
+            if( rsX.length() == 0 )
+                raise RuntimeError,  "ERROR #{__FILE__}/#{__LINE__}: Could not find profile #{profile}"+"\n"
+#                return false
+            end
+
+            return JSON.parse( rsX[0]["value"] )
+            
+        rescue => error
+            raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
+        end
     end    
     
     def db
@@ -266,7 +284,7 @@ class SqliteDatabase < AbstractEncDatabase
         
         squery_profile = "SELECT #{@@profile_name} AS name FROM #{@@profile_table} ORDER BY #{@@profile_name}"
         squery_host = "SELECT #{@@host_host} AS host FROM #{@@host_table} ORDER BY #{@@host_host}"
-        squery_bound = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id}"
+        squery_bound = "SELECT #{@@host_table}.#{@@host_host} as host, #{@@profile_table}.#{@@profile_name} as profile, #{@@profile_table}.#{@@profile_value} as value FROM #{@@profile_table} INNER JOIN #{@@host_table} ON #{@@host_table}.#{@@host_profile_id} = #{@@profile_table}.#{@@profile_id} ORDER BY host"
         
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List profile SQL: #{squery_profile}\n" ) if( @debug )    
         STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: List host SQL: #{squery_host}\n" ) if( @debug )    
