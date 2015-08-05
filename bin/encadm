@@ -189,8 +189,7 @@ profile = nil
 infile = nil
 hostname = nil
 
-task = ARGV.shift()
-
+task = ARGV[0] ? ARGV.shift() : "list"
 
 opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
@@ -289,7 +288,7 @@ begin
 			print_help()
 			exit()
 	    else
-	        STDERR.puts("ERROR: No such task #{ARGV[0]}")
+	        STDERR.puts("ERROR: No such task: #{task}")
 	        exit(-1)
 	end
 
