@@ -67,6 +67,9 @@ class SqliteDatabase < AbstractEncDatabase
 	    
 	    	handle.execute( "CREATE TABLE IF NOT EXISTS #{@@profile_table}( #{@@profile_id} INTEGER PRIMARY KEY AUTOINCREMENT, #{@@profile_name} TEXT UNIQUE, #{@@profile_value} TEXT )" )
 	    	handle.execute( "CREATE TABLE IF NOT EXISTS #{@@host_table}( #{@@host_id} INTEGER PRIMARY KEY AUTOINCREMENT, #{@@host_profile_id} INTEGER, #{@@host_host} TEXT UNIQUE  )" )
+            handle.execute( "CREATE INDEX IF NOT EXISTS profile_name_i ON #{@@profile_table}( #{@@profile_name} )" )
+            handle.execute( "CREATE INDEX IF NOT EXISTS host_host_i ON #{@@host_table}( #{@@host_host} )" )
+            handle.execute( "CREATE INDEX IF NOT EXISTS host_profile_id_i ON #{@@host_table}( #{@@host_profile_id} )" )
 
 	    	handle.close()
     
@@ -214,6 +217,8 @@ class SqliteDatabase < AbstractEncDatabase
 
         ## Since a false is expected when no profile is found to delete, an extra check is needed.
         ## This should be changed
+
+        ## TODO: Cleanup of hosts when a profile is deleted
         iquery_profile = "DELETE FROM #{@@profile_table} WHERE #{@@profile_name} = '#{profile}'"
         iquery_host = "DELETE FROM #{@@host_table} WHERE #{@@host_host} = '#{profile}'"
 
@@ -226,8 +231,9 @@ class SqliteDatabase < AbstractEncDatabase
         begin
 
             squery_host    = "SELECT #{@@host_host} as name FROM #{@@host_table} WHERE name = '#{profile}'"
-            squery_profile = "SELECT #{@@profile_name} as name FROM #{@@profile_table} WHERE name = '#{profile}'"
+            squery_profile = "SELECT #{@@profile_id},#{@@profile_name} as name FROM #{@@profile_table} WHERE name = '#{profile}'"
         
+
             STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Check Delete host SQL: #{squery_host}\n" ) if( @debug )    
             STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Check Delete profile SQL: #{squery_profile}\n" ) if( @debug )    
 
