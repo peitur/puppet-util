@@ -50,17 +50,17 @@ class SqliteDatabase < AbstractEncDatabase
     end
     
     def initdb( )
-    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Initializing dbschema for sqlite : #{@db}" if( @debug )
+    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Initializing dbschema for #{@engine} : #{@db}" if( @debug )
 
     	if( not Dir.exists?( File.dirname( @db ) ) )
-	    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Creating home directory for sqlite : #{@db}" if( @debug )
+	    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Creating home directory for #{@engine} : #{@db}" if( @debug )
 
     		FileUtils.mkdir_p( File.dirname( @db ) )
     	end
 
 		begin
 
-	    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Creating tables for sqlite : #{@db}" if( @debug )
+	    	STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Creating tables for #{@engine} : #{@db}" if( @debug )
 
 	    	SQLite3::Database.new( @db )
 	    	handle = SQLite3::Database.open( @db )

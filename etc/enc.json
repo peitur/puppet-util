@@ -4,6 +4,6 @@
   "enc.env"   : "production",
   "enc.ctype" : "parameters",
   "db.engine" : "sqlite",
-  "dir.db" : "/home/ubuntu/workspace/enc",
-  "sqlite.db" : "test/sqlite/enc.db"
+  "dir.db" : "/home/peter/pering/enc",
+  "sqlite.db" : "/home/peter/pering/enc/enc.db"
 }
