@@ -26,6 +26,9 @@ class EncDatabase
                 when "sqlite"
                     require "database/sqlite"
                     @db = SqliteDatabase.new( conf, debug )
+                when "psql"
+                    require "database/psql"
+                    @db = PsqlDatabase.new( conf, debug )
                 else
                     raise ArgumentError,  "ERROR #{__FILE__}/#{__LINE__}: Requested access engine #{engine} not supported"+"\n"
             end

@@ -216,8 +216,8 @@ class PsqlDatabase < AbstractEncDatabase
 
         begin
 
-            squery_host    = "SELECT #{@@host_host} as name FROM #{@@host_table} WHERE name = '#{profile}'"
-            squery_profile = "SELECT #{@@profile_id},#{@@profile_name} as name FROM #{@@profile_table} WHERE name = '#{profile}'"
+            squery_host    = "SELECT #{@@host_host} FROM #{@@host_table} WHERE #{@@host_host} = '#{profile}'"
+            squery_profile = "SELECT #{@@profile_id},#{@@profile_name} as name FROM #{@@profile_table} WHERE #{@@profile_name} = '#{profile}'"
         
 
             STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Check Delete host SQL: #{squery_host}\n" ) if( @debug )    
@@ -231,7 +231,8 @@ class PsqlDatabase < AbstractEncDatabase
             iquery_xec.push( iquery_profile ) if( rsP.ntuples() > 0 )
             iquery_xec.push( iquery_host )    if( rsH.ntuples() > 0 )
 
-            return false  if( iquery_xec.ntuples == 0 )
+            return false  if( iquery_xec.length() == 0 )
+
         rescue => error
             STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Nothing found to delete "+rsN.to_s+": "+error.to_s+"\n" ) if( @debug )
             STDERR.puts( error.backtrace )
@@ -268,7 +269,7 @@ class PsqlDatabase < AbstractEncDatabase
 
         begin
             @dbhandle.transaction {|conn|
-                conn.execute( iquery )
+                conn.exec( iquery )
             }        
 
             return true

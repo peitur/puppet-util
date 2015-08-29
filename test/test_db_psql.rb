@@ -12,7 +12,7 @@ require "pg"
 class TestDatabasePsql < Test::Unit::TestCase
     
     @@prepare = true
-    @@cleanup = false
+    @@cleanup = true
     @@debug = true
     DIR_PROFILES        = ["dd.domain.com", "test00.test.com","test01.test.com","default"]
     DIR_PROFILES_PREP   = ["dd1.domain.com", "test10.test.com","default1"]
@@ -48,6 +48,8 @@ class TestDatabasePsql < Test::Unit::TestCase
     end
    
     def teardown()
+        return true if not @@cleanup
+
         @engine = "psql"
         filename = "../test/test_enc.json"
         conf = EncConfig.new( filename, @@debug )
@@ -94,7 +96,7 @@ class TestDatabasePsql < Test::Unit::TestCase
     end
 
 
-    def xtest_insert
+    def test_insert
 
         DIR_PROFILES.each do |profile|
             infile = File.dirname( __FILE__ )+"/"+profile+".json"
@@ -106,7 +108,7 @@ class TestDatabasePsql < Test::Unit::TestCase
         assert_equal( false, @db.insert( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def xtest_delete
+    def test_delete
         @@prepare = true
 
         DIR_PROFILES.each do |profile|
@@ -123,7 +125,7 @@ class TestDatabasePsql < Test::Unit::TestCase
         assert_equal( false, @db.delete( nil ) )
     end
 
-    def xtest_update
+    def test_update
         DIR_PROFILES.each do |profile|
             infile = File.dirname( __FILE__ )+"/"+profile+".json"
             data = EncUtil.load_json( infile )
@@ -151,7 +153,7 @@ class TestDatabasePsql < Test::Unit::TestCase
         assert_equal( false, @db.update( nil, EncUtil.load_json( "noprofile" )) )
     end
     
-    def xtest_fetch
+    def test_fetch
         ok_string = '{"hostname":"test1.domain.com","ntp":["time11.domain.com","time12.domain.com"]}'
         ok_profile = "default"
         nok_profile = "missing"
@@ -173,7 +175,7 @@ class TestDatabasePsql < Test::Unit::TestCase
 
     end
     
-    def xtest_bind
+    def test_bind
         DIR_PROFILES.each do |profile|
             infile = File.dirname( __FILE__ )+"/"+profile+".json"
             data = EncUtil.load_json( infile )
