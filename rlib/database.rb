@@ -37,6 +37,12 @@ class EncDatabase
         end
     end
 
+    def initdb()
+        return nil if( ! @db )
+        
+        return @db.initdb()
+    end
+
     def search( pattern )
         
         return nil if( ! @db )

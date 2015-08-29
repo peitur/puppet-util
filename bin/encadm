@@ -32,6 +32,18 @@ DEBUG = false
 ########## FUNCTIONS
 #####################################################################################################
 
+def init_database( db )
+	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Update profile, Missing database connection "+"\n" if( not db )
+
+	begin
+		STDOUT.puts("Initializing the database")
+		db.initdb()
+		
+	rescue => error
+		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+	end
+end
+
 def add_profile( db, profile, infile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing database connection "+"\n" if( not db )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing profile "+"\n" if( not profile )
@@ -81,8 +93,6 @@ def update_profile( db, profile, infile )
 	rescue => error
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
 	end
-
-
 end
 
 def profile_list( db )
@@ -159,6 +169,8 @@ def print_help()
 	STDOUT.puts( "\n" )
 	STDOUT.puts( "Tasks:\n" )
 	STDOUT.puts( "\thelp\tThis help printout\t\tRequires:[]"+"\n" )
+	
+	STDOUT.puts( "\tinit\tInitialize the database\tRequires:[]"+"\n" )
 	STDOUT.puts( "\tadd\tAdd a prfile and filename\tRequires:[profile,file]"+"\n" )
 	STDOUT.puts( "\tmod\tModify existing profile\tRequires:[profile, file]"+"\n")
 	STDOUT.puts( "\tdel\tDelete a profile\t\tRequires:[profile]"+"\n" )
@@ -271,6 +283,8 @@ end
 ##---------------------------------------------------------------------------------------------------
 begin
 	case task
+		when "init"
+	    	init_database( db )
 	    when "add"
 	    	add_profile( db, profile, infile )
 	    when "del"

@@ -10,14 +10,7 @@ class PsqlDatabase < AbstractEncDatabase
          super( 'psql', conf, debug )
 
         STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using PostgreSQL based host lookup : "+ @config.to_s if( @debug )
-
-        begin
-            initdb()
-        rescue => error
-            raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Database init failed : #{error}"+"\n"            
-        end
-
-         
+        
         begin
             
             @dbhandle = PG::Connection.open(:dbname => @db, :user => @user, :host => @hostname, :password => @password )

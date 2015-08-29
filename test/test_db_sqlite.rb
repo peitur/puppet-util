@@ -35,7 +35,7 @@ class TestDatabaseSqlite < Test::Unit::TestCase
         @conf.key!( "db.engine", "sqlite")
 
         @db = SqliteDatabase.new( @conf, @@debug )
-
+        @db.initdb()
 
 
         if( @@prepare )

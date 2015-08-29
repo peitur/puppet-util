@@ -13,7 +13,7 @@ class TestDatabasePsql < Test::Unit::TestCase
     
     @@prepare = true
     @@cleanup = true
-    @@debug = true
+    @@debug = false
     DIR_PROFILES        = ["dd.domain.com", "test00.test.com","test01.test.com","default"]
     DIR_PROFILES_PREP   = ["dd1.domain.com", "test10.test.com","default1"]
 
@@ -36,6 +36,7 @@ class TestDatabasePsql < Test::Unit::TestCase
         @conf = EncConfig.new( filename, @@debug )
 
         @db = PsqlDatabase.new( @conf, @@debug )
+        @db.initdb()
 
         if( @@prepare )
             DIR_PROFILES_PREP.each do |profile|
