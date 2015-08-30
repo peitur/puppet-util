@@ -19,7 +19,7 @@ class PsqlDatabase < AbstractEncDatabase
 
             STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Using PostgreSQL based host lookup : "+ @config.key( 'psql.db' ) if( @debug )
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: #{error}"+"\n"
         end
         
@@ -42,7 +42,7 @@ class PsqlDatabase < AbstractEncDatabase
 #                conn.exec( "CREATE INDEX IF NOT EXISTS host_profile_id_i ON #{@@host_table}( #{@@host_profile_id} )" )
             }    
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Init error : #{error}"+"\n"
         ensure
             handle.close if handle
@@ -79,7 +79,7 @@ class PsqlDatabase < AbstractEncDatabase
                 result.push( row['profile'] )
             end            
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Search profile #{pattern} failed: "+error.to_s+"\n"
         end
 
@@ -127,7 +127,7 @@ class PsqlDatabase < AbstractEncDatabase
             return nodedata
             
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
         end
 
@@ -152,7 +152,7 @@ class PsqlDatabase < AbstractEncDatabase
             return JSON.parse( rsX[0]["value"] )
             
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not get profile #{name} : "+error.to_s+"\n"
         end
     end    
@@ -181,7 +181,7 @@ class PsqlDatabase < AbstractEncDatabase
             
             return true
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not register profile #{profile} : "+error.to_s+"\n"
         end
         
@@ -228,7 +228,7 @@ class PsqlDatabase < AbstractEncDatabase
 
         rescue => error
             STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: Nothing found to delete "+rsN.to_s+": "+error.to_s+"\n" ) if( @debug )
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             return false
         end
 
@@ -243,7 +243,7 @@ class PsqlDatabase < AbstractEncDatabase
 
             return true
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{profile}: "+error.to_s+"\n"    
         end
         
@@ -267,7 +267,7 @@ class PsqlDatabase < AbstractEncDatabase
 
             return true
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Could not update profile #{profile} : "+error.to_s+"\n"
         end
     end
@@ -298,7 +298,7 @@ class PsqlDatabase < AbstractEncDatabase
                 result['profile'].push( row['name'] )
             end            
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing profile list failed: "+error.to_s+"\n"
         end
 
@@ -308,7 +308,7 @@ class PsqlDatabase < AbstractEncDatabase
                 result['host'].push( row['host'] )
             end            
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace )  if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing host list failed: "+error.to_s+"\n"
         end
 
@@ -319,7 +319,7 @@ class PsqlDatabase < AbstractEncDatabase
                 result['bound'].push( [row['host'], row['profile']] )
             end            
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise RuntimeError, "ERROR #{__FILE__}/#{__LINE__}: Listing bound list failed: "+error.to_s+"\n"
         end
 
@@ -349,7 +349,7 @@ class PsqlDatabase < AbstractEncDatabase
             profile_id = rsX[0]["id"]
             
         rescue => error
-            STDERR.puts( error.backtrace )
+            STDERR.puts( error.backtrace ) if( @debug )
             raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: SQL error looing for profile #{profile} to bind to host #{hostname}: "+error.to_s+"\n"    
         end
         
@@ -372,7 +372,7 @@ class PsqlDatabase < AbstractEncDatabase
                 return [profile, hostname]
                 
             rescue => error
-                STDERR.puts( error.backtrace )
+                STDERR.puts( error.backtrace ) if( @debug )
                 raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Could not delete #{profile}: "+error.to_s+"\n"    
             end
         end
