@@ -1,0 +1,35 @@
+#!/usr/bin/ruby
+
+require 'getoptlong'
+
+
+current_dir = File.dirname( __FILE__ )
+lib_dir = current_dir+"/../rlib"
+$LOAD_PATH.unshift( lib_dir )
+#puts "DEBUG #{__LINE__}: Load path is "+$LOAD_PATH.to_s()
+
+
+
+require 'json'
+require 'yaml'
+
+require 'util'
+
+file = ARGV.shift
+
+
+
+begin
+
+    raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: No filename '#{file}' \n" if not file
+
+    if( not EncUtil.load_json( file ) )
+        raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Reference file '#{file}' could not be parsed\n"
+    end
+
+    puts YAML.dump( EncUtil.load_json( file ) )   
+
+rescue => error
+   raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
+end
+
