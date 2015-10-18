@@ -85,7 +85,11 @@ def list_ppid( path, ppid ):
 
 	return result
 
+def list_daemons( path ):
+	return list_ppid( path, "1" )
 
+def list_children( path, pid ):
+	return list_ppid( path, pid )	
 
 def process_info_stat( pid ):
 	filename = ROOTPATH+"/"+pid+"/"+STATFILE
@@ -200,8 +204,7 @@ for d in dlist:
 #cProfile.run( "filter_process( 'threads', 5 )" )
 #cProfile.run( "filter_process( 'name', 'smbd')")
 #cProfile.run( "filter_process(  'swaped', 1 )")
-#cProfile.run( "filter_process(  'size', 500000 )") 
-
+#cProfile.run( "filter_process(  'size', 500000 )")
 
 #print( int("123"))
 #print( int("abc")) throws exception
