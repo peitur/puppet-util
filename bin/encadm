@@ -50,7 +50,15 @@ def add_profile( db, profile, infile )
 	raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Add profile, Missing reference file "+"\n" if( not infile )
 
 	begin
-		db.insert( profile, EncUtil.load_json( infile ) )
+	
+		if( not EncUtil.load_json( infile ) )
+			raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Reference file '#{infile}' could not be parsed\n"
+		end
+	
+		if( not db.insert( profile, EncUtil.load_json( infile ) ) )
+			raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: Inserting profile '#{profile}' failed\n"
+		end
+
 	rescue => error
 		raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: "+error.to_s+"\n"
 	end
