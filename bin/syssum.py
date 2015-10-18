@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 
-from pathlib import Path
+#from pathlib import Path
 import re
+import os
 
 ROOTPATH = "/proc"
 STATFILE = "stat"
@@ -44,9 +45,11 @@ def list_processes( path ):
 	proclist = []
 
 	try:
-		path = Path( path )
-		for x in path.iterdir():
-			xs = x.name
+#		path = Path( path )
+#		for x in path.iterdir():
+#			xs = x.name
+		
+		for xs in os.listdir( path ):
 
 			if pre.match( xs ):
 				proclist.append( xs )
