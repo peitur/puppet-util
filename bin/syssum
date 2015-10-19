@@ -138,6 +138,14 @@ def process_info_stat( pid ):
 	return None
 
 
+def pad_info( info ):
+
+	for f in SUPPORTED_FIELDS:
+		if f not in info:
+			info[f] = ""
+			
+	return info
+
 def process_info_status( pid ):
 	filename = ROOTPATH+"/"+pid+"/"+STATUSFILE
 
@@ -157,6 +165,8 @@ def process_info_status( pid ):
 			if not 'state' in info and re.match( r'^State:', line ): info['state'] = EXECSTATE[ line.strip().split()[1] ]
 
 			info['cmdline'] = commandline( pid )
+	
+		info = pad_info( info )
 	
 		return info
 
@@ -237,7 +247,7 @@ def print_list( plist, **argv ):
 			cmdline = info['cmdline'][0:CMDLINE_LEN]+"..."
 		else:
 			cmdline = info['cmdline']
-			
+		
 		print("> %(pid)6s | %(ppid)6s | %(name)16s | %(state)10s | %(flag)10s | %(size)10s | %(cmdline)s" % { 'cmdline': cmdline ,'size': info['size'] , 'pid': info['pid'], 'ppid': info['ppid'], 'name': info['name'], 'state': info['state'], 'flag': flag } )
 
 	pass
