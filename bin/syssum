@@ -1,12 +1,16 @@
 #!/usr/bin/python3
 
 #from pathlib import Path
-import re
-import os
+import re, sys, os, getopt
+
 
 ROOTPATH = "/proc"
 STATFILE = "stat"
 STATUSFILE = "status"
+
+
+DEFUALT_FILTER_NAME = "name"
+DEFUALT_FILTER_VALUE = ""
 
 EXECSTATE = {
  'R': "running",
@@ -17,6 +21,10 @@ EXECSTATE = {
  'Z': "zombie",
  'X': "dead"	
 }
+
+SUPPORTED_FIELDS = [
+	'pid', 'ppid','name','state','size','swaped','threads','peak','csize'
+]
 
 def is_daemon( pid ):
 	filename = ROOTPATH+"/"+pid+"/"+STATFILE
@@ -139,7 +147,20 @@ def process_info_status( pid ):
 def process_info( pid ):
 	return process_info_status( pid )
 
-def filter_process( name, value, daemon = False ):
+
+def filter_process( name, value, options ):
+
+#	print("options: %(options)s" % {'options':options.__str__()} )
+
+	daemon = False
+	regexp = False
+	compare = "eq"
+
+	if( 'daemon' in options ): daemon = options['daemon']
+	if( 'regexp' in options ): regexp = options['regexp']
+	if( 'compare' in options ): compare = options['compare']
+
+#	print(">>> D:%(daemon)s R:%(regexp)s C:%(compare)s" % { 'daemon': daemon, 'regexp': regexp, 'compare': compare}) 
 
 	result = []
 	try:
@@ -153,13 +174,24 @@ def filter_process( name, value, daemon = False ):
 		for p in processlist:
 			info = process_info( p )
 
-			if name in info: 
+			if name in info:
+			
 				if( isinstance( value, int ) ):
+
 					if( int( info[name] ) >= value ): 
-						result.append( info )
+						result.append( p )
+				
 				else:
-					if( info[name] == value ):
-						result.append( info ) 
+
+					if( regexp ):
+						if( re.match( value, info[name] ) ):
+							result.append( p )						
+					else:
+						if( info[name] == value ):
+							result.append( p )
+
+			else:
+				print("WARN: Could not load name from process %(proc)" % {'proc': p})
 
 		return result
 	except Exception as error:
@@ -168,22 +200,114 @@ def filter_process( name, value, daemon = False ):
 	return result
 
 
+def print_list( plist, **argv ):
+	print("Found %(pnum)s processes" % { 'pnum': len( plist ) } )
+	for p in plist:
+		info = process_info( p )
+
+		flag = ""
+		if info['ppid'] == "1": 
+			flag = "(daemon)"
+		print("> %(pid)6s %(name)16s %(state)10s %(flag)10s" % { 'pid': info['pid'], 'name': info['name'], 'state': info['state'], 'flag': flag } )
+
+	pass
+
+def print_help( script = sys.argv[0] ):
+	print("Help for %(script)s" % { 'script': script } )
+	print("%(script)s  <task> [options]" % { 'script': script })
+	print("%(script)s  list \t (default)" % { 'script': script })
+	print("%(script)s  daemons" % { 'script': script })
+	print("%(script)s  search [options]" % { 'script': script })
+	print("Search options:")
+	print("\t-n|--name <searchkey>    \t Process info key to filter by")
+	print("\t-n|--value <searchvalue> \t Process info value to search for")	
+	print("\t-r|--regexp \t\t\t Apply regexp match on search values")
+	print("Search: supported names: %(namelist)s" % {'namelist': SUPPORTED_FIELDS.__str__() })
+	print("Example: ")
+	print("%(script)s search -name state -value running" % { 'script': script })
+	print("%(script)s search -n state -v run -regexp" % { 'script': script })
+	print("%(script)s search -n swaped -v 1024" % { 'script': script })
+	print("")
+	pass
+
 ############################################################################
 
-plist = list_processes( ROOTPATH )
-dlist = list_ppid( ROOTPATH, "1" )
+inparams = sys.argv
 
-print("Found %(plist_len)i processes of which %(dlist_len)i are daemons" % { 'plist_len':len(plist), 'dlist_len': len( dlist ) })
-print("Local daemons are:")
+script = inparams.pop(0)
+filter_key = 'name'
+filter_val = None
+
+task = 'list'
+if len( sys.argv ) > 0 : 
+	task = inparams.pop(0)
+
+
+if( task == 'help'):
+	print_help( script )
+	sys.exit(0)
+
+#print(" %(script)s >> %(task)s " % {'script': script, 'task': task} )
+#print("%(argv)s" % {'argv': inparams.__str__() } )
+
+try:
+	if task == 'list':
+		print_list( list_processes( ROOTPATH ) )
+	elif task == 'daemons': 
+		print_list( list_daemons( ROOTPATH ) )
+	elif task == 'search':
+
+
+		try:
+			optlist, args = getopt.getopt( inparams, "Drn:v:", ["name","value","regexp","daemon"])
+		except getopt.GetoptError as err:
+			print("Options: %(error)s" % { 'error': err.__str__() } )
+			sys.exit(1)
+
+		name = DEFUALT_FILTER_NAME
+		value = DEFUALT_FILTER_VALUE
+		regexp = False
+		daemon = False
+		compare = 'ge'
+
+
+		for opt,arg in optlist:
+			if( opt   in ("-n","--name") ): name = arg
+			elif( opt in ("-v","--value") ): value = arg
+			elif( opt in ("-r", "--regexp") ): regexp = True
+			elif( opt in ("-D", "--daemon") ): daemon = True
+			elif( opt in ("-ge") ): compare = "ge"
+			elif( opt in ("-le") ): compare = "le"
+			elif( opt in ("-eq") ): compare = "eq"
+						
+
+#		print(">>>> %(list)s" % {'list':filter_process( name, value )} )
+		print_list( filter_process( name, value, { 	'regexp': regexp, 
+													'daemon': daemon, 
+													'compare': compare  
+												 } ) )
+	else:
+		raise 
+
+except Exception  as error:
+	print("ERROR: %(error)s" % { 'error': error.__str__() } )
+############################################################################
+
+
+#plist = list_processes( ROOTPATH )
+#dlist = list_ppid( ROOTPATH, "1" )
+
+#print("Found %(plist_len)i processes of which %(dlist_len)i are daemons" % { 'plist_len':len(plist), 'dlist_len': len( dlist ) })
+#print("Local daemons are:")
 #for d in dlist:
 #	print( "%(pid)5s > %(process_info)s " % {'pid': d, 'process_info': process_info_stat( d )[1] } )
 #	print( "\t > %(cpid)s " % {'cpid': list_ppid( ROOTPATH, d ) } )
 
-for d in dlist:
-	info = process_info( d )
-	print("inf: %(info)s" % { 'info': info.__str__() })
-	print("%(pid)s > %(name)s S: %(state)s" % {'pid': d , 'name': info['name'], 'state': info['state'] })
-	print( "\t > %(cpid)s " % {'cpid': list_ppid( ROOTPATH, d ) } )
+#for d in dlist:
+#	info = process_info( d )
+#	print("inf: %(info)s" % { 'info': info.__str__() })
+#	print("%(pid)s > %(name)s S: %(state)s" % {'pid': d , 'name': info['name'], 'state': info['state'] })
+#	print( "\t > %(cpid)s " % {'cpid': list_ppid( ROOTPATH, d ) } )
 
 
 #print("1F: %(info)s" % { 'info': filter_process( 'state', 'running') })
