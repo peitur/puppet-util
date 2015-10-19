@@ -186,7 +186,11 @@ def filter_process( name, value, options ):
 
 	daemon = False
 	regexp = False
-	compare = "eq"
+	compare = "ge"
+
+	print("%(value)s" % { 'value': value })
+	if( len(value) > 0 and re.match( r'^[0-9]+$', value ) ):
+		value = int( value )
 
 	if( 'daemon' in options ): daemon = options['daemon']
 	if( 'regexp' in options ): regexp = options['regexp']
@@ -210,9 +214,18 @@ def filter_process( name, value, options ):
 			
 				if( isinstance( value, int ) ):
 
-					if( int( info[name] ) >= value ): 
-						result.append( p )
-				
+					if( compare == 'ge'):
+						if( int( info[ name ] ) >= value ):
+							result.append( p )
+
+					if( compare == 'le'):
+						if( int( info[ name ] ) <= value ):
+							result.append( p )
+
+					if( compare == 'eq'):
+						if( int( info[ name ] ) == value ):
+							result.append( p )
+
 				else:
 
 					if( regexp ):
@@ -222,8 +235,8 @@ def filter_process( name, value, options ):
 						if( info[name] == value ):
 							result.append( p )
 
-			else:
-				print("WARN: Could not load name from process %(proc)" % {'proc': p})
+#			else:
+#				print("WARN: Could not load name from process %(proc)s" % {'proc': info})
 
 		return result
 	except Exception as error:
@@ -244,7 +257,7 @@ def print_list( plist, **argv ):
 			flag = "(daemon)"
 			
 		if len( info['cmdline'] ) > CMDLINE_LEN :
-			cmdline = info['cmdline'][0:CMDLINE_LEN]+"..."
+			cmdline = info['cmdline'][0:CMDLINE_LEN-3]+"..."
 		else:
 			cmdline = info['cmdline']
 		
@@ -299,7 +312,7 @@ try:
 
 
 		try:
-			optlist, args = getopt.getopt( inparams, "Drn:v:", ["name","value","regexp","daemon"])
+			optlist, args = getopt.getopt( inparams, "Drn:v:", ["name","value","regexp","daemon","le","ge","eq"])
 		except getopt.GetoptError as err:
 			print("Options: %(error)s" % { 'error': err.__str__() } )
 			sys.exit(1)
@@ -316,9 +329,9 @@ try:
 			elif( opt in ("-v","--value") ): value = arg
 			elif( opt in ("-r", "--regexp") ): regexp = True
 			elif( opt in ("-D", "--daemon") ): daemon = True
-			elif( opt in ("-ge") ): compare = "ge"
-			elif( opt in ("-le") ): compare = "le"
-			elif( opt in ("-eq") ): compare = "eq"
+			elif( opt in ("--ge") ): compare = "ge"
+			elif( opt in ("--le") ): compare = "le"
+			elif( opt in ("--eq") ): compare = "eq"
 						
 
 #		print(">>>> %(list)s" % {'list':filter_process( name, value )} )
@@ -330,7 +343,7 @@ try:
 		raise 
 
 except Exception  as error:
-	print("ERROR: %(error)s" % { 'error': error.__str__() } )
+	print("ERROR: %(error)s" % { 'error': error } )
 ############################################################################
 
 
