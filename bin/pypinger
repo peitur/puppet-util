@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+
+#from pathlib import Path
+import re, sys, os, getopt, subprocess, threading
+
+##########################################################
+## Constants
+
+PING_CMD = ['/usr/bin/ping','-s','1024','-D']
+
+##########################################################
+
+class Pinger( threading.Thread ):
+	def __init__(self, ipaddr = "127.0.0.1" ):
+		threading.Thread.__init__(self)
+		self.ipaddr = ipaddr
+		self.state = True
+
+	def run(self):
+	
+		command.append( self.ipaddr )
+		print(">> %(cmd)s" % {'cmd': " ".join( command ) })
+
+
+		with subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) as proc:
+
+			try:
+				while self.state:
+					ind = proc.stdout.readline()
+					if( len(ind) == 0):
+						self.state = False
+
+					print("##>>>>>>> %(in)s " % {'in': ind })
+
+			except Exception as error:
+				print("%(error)s" % { 'error': error })
+
+			proc.kill()
+
+	def stop(self):
+		self.state = False
+
+
+class Printer( threading.Thread ):
+	def __init__( self ):
+		threading.Thread.__init__(self)
+		self.state = True
+
+	def run( self ):
+		while( self.state ):
+			pass
+
+	def stop( self ):
+		self.state = False
+
+
+##########################################################
+## Main 
+
+command = PING_CMD
+ipaddr = "127.0.0.1"
+if len( sys.argv ) > 1:
+	ipaddr = sys.argv.pop()
+
+print("IP: %(ip)s " % {'ip': ipaddr })
+try:
+	p = Pinger( ipaddr )
+	p.start()
+
+	p.join()
+except Exception as error:
+	print("ERROR: %(error)s" % {'error': error } )
+	p.stop()
+
