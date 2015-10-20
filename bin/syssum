@@ -27,6 +27,7 @@ SUPPORTED_FIELDS = [
 	'pid', 'ppid','name','state','size','swaped','threads','peak','csize','cmdline'
 ]
 
+
 def is_daemon( pid ):
 	filename = ROOTPATH+"/"+pid+"/"+STATFILE
 	try:
@@ -188,17 +189,16 @@ def filter_process( name, value, options ):
 	regexp = False
 	compare = "ge"
 
-	print("%(value)s" % { 'value': value })
+#	print("%(value)s" % { 'value': value })
 	if( len(value) > 0 and re.match( r'^[0-9]+$', value ) ):
 		value = int( value )
 
-	if( 'daemon' in options ): daemon = options['daemon']
+	if( 'daemon' in options )	: daemon = options['daemon']
 	if( 'regexp' in options ): regexp = options['regexp']
 	if( 'compare' in options ): compare = options['compare']
 
-#	print(">>> D:%(daemon)s R:%(regexp)s C:%(compare)s" % { 'daemon': daemon, 'regexp': regexp, 'compare': compare}) 
+	if debug: print("DEBUG: Filter input: D:%(daemon)s R:%(regexp)s C:%(compare)s" % { 'daemon': daemon, 'regexp': regexp, 'compare': compare}) 
 
-	result = []
 	try:
 
 		if daemon:
@@ -206,13 +206,27 @@ def filter_process( name, value, options ):
 		else:
 			processlist = list_processes( ROOTPATH )
 
+	except Exception as error:
+		print("ERROR: Could not load process list %(error)s" % {'error': error})
+		raise
+
+
+	result = []
+	try:
 
 		for p in processlist:
 			info = process_info( p )
 
 			if name in info:
 			
+				## Hack to get around numerical values that are empty in source file
+				if( len( info[name] ) == 0 ):
+					info[name] = 0
+
+				## Filter a numeric value
 				if( isinstance( value, int ) ):
+
+					if debug: print("DEBUG: Info per process: P:%(pid)s N:%(name)s iN:%(nvalue)s V:%(value)s " % { 'pid':p, 'name':name, 'nvalue': info[name], 'value':value })
 
 					if( compare == 'ge'):
 						if( int( info[ name ] ) >= value ):
@@ -240,6 +254,7 @@ def filter_process( name, value, options ):
 
 		return result
 	except Exception as error:
+		print("ERROR: Filter caused error: %(error)s" % {'error':error})
 		raise
 
 	return result
@@ -283,9 +298,14 @@ def print_help( script = sys.argv[0] ):
 	print("")
 	pass
 
-############################################################################
+ ############################################################################
 
 inparams = sys.argv
+
+debug = False
+if '--debug' in sys.argv:
+	sys.argv.remove( '--debug' )
+	debug = True
 
 script = inparams.pop(0)
 filter_key = 'name'
