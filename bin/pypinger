@@ -1,12 +1,20 @@
 #!/usr/bin/python3
 
 #from pathlib import Path
-import re, sys, os, getopt, subprocess, threading
+import re, sys, os, getopt, subprocess, threading, signal, time, queue
 
 ##########################################################
 ## Constants
 
 PING_CMD = ['/usr/bin/ping','-s','1024','-D']
+
+RUN = True
+
+QUEUE_CONDITION = threading.Event()
+QUEUE_WATCHDOG = threading.Event()
+
+EVENT_QUEUE = queue.Queue()
+THREADS = []
 
 ##########################################################
 
@@ -21,41 +29,124 @@ class Pinger( threading.Thread ):
 		command.append( self.ipaddr )
 		print(">> %(cmd)s" % {'cmd': " ".join( command ) })
 
-
-		with subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) as proc:
+		parttern = re.compile( '^\[([0-9]+\.[0-9]+)\]\s+([0-9]+).+icmp_seq=([0-9]+)\s+ttl=([0-9]+)\s+time=([0-9]+)' )
+#		parttern = re.compile( '^\[([0-9]+\.[0-9]+)\]' )
+		with subprocess.Popen( command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT ) as proc:
 
 			try:
+
 				while self.state:
 					ind = proc.stdout.readline()
 					if( len(ind) == 0):
 						self.state = False
 
-					print("##>>>>>>> %(in)s " % {'in': ind })
+#					if debug: print("%(in)s " % {'in': str(ind) })
+	
+					m = parttern.match( ind.decode('ascii') )
+					if( m ):
+#						print("%(grps)s" % { 'grps': m.groups() })
+						stime = m.group(1)
+						bytes = m.group(2)
+						seq = m.group(3)
+						ttl = m.group(4)
+						ttime = m.group(5)
+
+						EVENT_QUEUE.put( { 'stime': stime, 'bytes':bytes, 'seqnum': seq,'ttl': ttl,'turnaround': ttime  } )
+
+						QUEUE_WATCHDOG.set()
+						QUEUE_CONDITION.set()
 
 			except Exception as error:
-				print("%(error)s" % { 'error': error })
+				print("ERROR: %(error)s" % { 'error': error })
+	
+			finally:
+				proc.kill()
 
-			proc.kill()
+		print("Pinger dying...")
+
 
 	def stop(self):
 		self.state = False
 
 
 class Printer( threading.Thread ):
-	def __init__( self ):
+	def __init__( self, debug = False ):
 		threading.Thread.__init__(self)
 		self.state = True
+		self.debug = debug
 
 	def run( self ):
 		while( self.state ):
-			pass
+
+			QUEUE_CONDITION.wait()
+
+			if( EVENT_QUEUE.qsize() ):
+				qsize = EVENT_QUEUE.qsize()
+				evitem = EVENT_QUEUE.get()
+
+				print("[%(size)s] %(grps)s" % {'size': qsize , 'grps': evitem })
+				
+			QUEUE_CONDITION.clear()
+
+		print("Printer dying...")
+
 
 	def stop( self ):
 		self.state = False
 
 
+class Watchdog( threading.Thread ):
+	def __init__( self, warn_tmr = 1000, error_tmr = 1000 ):
+		threading.Thread.__init__( self )
+		self.timer_warn = warn_tmr
+		self.timer_error = error_tmr
+		self.state = True
+
+	def run( self ):
+		while( self.state ):
+			starttime = time.time()
+			donetime = None
+			delta = 0
+			
+			QUEUE_WATCHDOG.wait()
+
+			if( EVENT_QUEUE.qsize() ):
+
+				donetime = time.time()
+				delta = donetime - starttime
+
+				if( delta > 1 ):
+					print("WOOOFF %(delta)s" % {'delta': delta })
+
+			QUEUE_WATCHDOG.clear()
+	
+		print("Dog dying...")
+
+	def stop( self ):
+		self.state = False
+
+
+
 ##########################################################
 ## Main 
+
+def signal_handler(signal, frame):
+	RUN = False
+
+	for thread in THREADS:
+		thread.stop()
+
+		QUEUE_WATCHDOG.set()
+		QUEUE_CONDITION.set()
+
+
+
+	print("Exiting...")
+	sys.exit(0)
+
+
+
+
 
 command = PING_CMD
 ipaddr = "127.0.0.1"
@@ -64,11 +155,22 @@ if len( sys.argv ) > 1:
 
 print("IP: %(ip)s " % {'ip': ipaddr })
 try:
-	p = Pinger( ipaddr )
-	p.start()
 
-	p.join()
+	signal.signal( signal.SIGINT, signal_handler )
+
+	THREADS.append( Pinger( ipaddr ) )
+	THREADS.append( Printer( ) )
+	THREADS.append( Watchdog( ) )
+
+
+	for thread in THREADS:
+		thread.start()
+
+
+	for thread in THREADS:
+		thread.join()
+
+
 except Exception as error:
 	print("ERROR: %(error)s" % {'error': error } )
-	p.stop()
 
