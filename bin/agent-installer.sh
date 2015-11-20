@@ -1,6 +1,9 @@
 #!/usr/bin/sh
 
 PUPPET_REPO_FILE="http://yum.puppetlabs.com/puppetlabs-release-pc1-el-7.noarch.rpm"
+PUPPET_CONFIG="/etc/puppetlabs/puppet/puppet.conf"
+
+
 
 if [ $1 ]; then
 	PUPPET_NODE_NAME=$1
@@ -18,17 +21,23 @@ if [ $USER != "root" ]; then
 fi
 
 if [ ! ${PUPPET_NODE_NAME} ]; then
-	echo "No NODE NAME"
+	echo "No PUPPET_NODE_NAME"
+	exit
+fi
+
+if [ ! ${PUPPET_SERVER_NAME} ]; then
+	echo "No  PUPPET_SERVER_NAME"
 	exit
 fi
 
 if [ ! ${PUPPET_NODE_TYPE} ]; then
-	PUPPET_NODE_TYPE="node"
+	PUPPET_NODE_TYPE="common"
 fi
 
 
 YUM=$( which yum )
 RPM=$( which rpm )
+SYSTEMCTL=$( which systemctl )
 
 if [ ! ${RPM} ]; then
 	echo "Only supports RPM based (Red Hat) systems"
@@ -47,3 +56,25 @@ if [ ! $( which puppet) ]; then
 else
 	echo "Already have puppet-agent"
 fi
+
+
+if [ -f ${PUPPET_CONFIG} ];then
+	$SYSTEMCTL enable puppet
+
+cat > ${PUPPET_CONFIG}  <<EOL
+# This file can be used to override the default puppet settings.
+# See the following links for more details on what settings are available:
+# - https://docs.puppetlabs.com/puppet/latest/reference/config_important_settings.html
+# - https://docs.puppetlabs.com/puppet/latest/reference/config_about_settings.html
+# - https://docs.puppetlabs.com/puppet/latest/reference/config_file_main.html
+# - https://docs.puppetlabs.com/references/latest/confi
+
+[agent]
+	server = ${PUPPET_SERVER_NAME}
+EOL
+
+	$SYSTEMCTL start puppet
+#	cat ${PUPPET_CONFIG}
+
+fi
+
