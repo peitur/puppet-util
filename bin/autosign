@@ -1,0 +1,139 @@
+#!/usr/bin/env ruby
+
+current_dir = File.dirname( __FILE__ )
+lib_dir = current_dir+"/../rlib"
+$LOAD_PATH.unshift( lib_dir )
+#puts "DEBUG #{__LINE__}: Load path is "+$LOAD_PATH.to_s() 
+
+
+require 'json'
+require 'yaml'
+
+require 'config'
+require 'database'
+require 'util'
+
+
+#####################################################################################################
+########## CONSTANTS
+#####################################################################################################
+
+DB_TYPE = 'dir'
+
+
+JSON_ENDING = ".json"
+ENDING = ""
+DEFAULT="default"
+CONFIG="enc.json"
+DEBUG = false
+
+STRICTMATCH = "default"
+DEFAULT_ENV = "production"
+
+
+
+
+
+#####################################################################################################
+########## MAIN
+#####################################################################################################
+
+etc_dir = current_dir+"/../etc"
+enc_dir = current_dir+"/../enc"
+debug = DEBUG
+
+shortest_pem = 16
+certname = ARGV.shift
+
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Load Config
+##---------------------------------------------------------------------------------------------------
+begin 
+	conf = EncConfig.new( etc_dir+"/"+CONFIG ) ## Lets initialize the conf variable (global) with nil, for later usage
+	
+	if( conf != nil and conf.key?( "enc.debug") and conf.key("enc.debug") == "true" )
+		debug = true
+	end
+	
+	if( debug )
+		STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Supported options "+conf.options().to_s()+"\n"
+		conf.options().each{ |k| STDERR.puts "DEBUG #{__FILE__}/#{__LINE__}: Default value for #{k} => "+conf.default( k ).to_s()+"\n" }
+	end
+	
+	STDERR.puts( "DEBUG #{__FILE__}/#{__LINE__}: Current script dirrectory is #{current_dir} " ) if debug
+	
+	## After we have tried to load the config, lets check if we actually loaded any data into it
+	if( conf == nil )
+		
+		STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}"+"\n") if( debug )
+	
+		exit(1)
+	end
+
+	
+rescue => error
+	STDERR.puts( "ERROR #{__FILE__}/#{__LINE__}: No confg was loaded from #{CONFIG}:"+"\n"+error.to_s ) if( debug )
+	exit(1)	
+end
+
+
+
+##---------------------------------------------------------------------------------------------------
+##----------------  Verify Input Values
+##---------------------------------------------------------------------------------------------------
+
+
+if( ! certname )
+	STDERR.puts("ERROR: Missing certname")
+	exit(-1)
+end
+
+pemdata = gets()
+STDERR.puts("DEBUG: Received #{certname} with key length: #{pemdata.size}") if( debug )
+
+if( pemdata.size() <= shortest_pem )
+	STDERR.puts("ERROR: Short certificate content: #{pemdata.size}")
+	exit(-0)
+end
+
+
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Search database
+##---------------------------------------------------------------------------------------------------
+begin
+	
+	## must have a pattern as only input argument, else must exit without other output
+	search = certname
+	
+	## get file list, but if nil is retrned, just exit without output
+	engine = conf.key?( "db.engine" ) ? conf.key( "db.engine") : DB_TYPE
+	db = EncDatabase.new( engine, conf, debug )
+	filelist = db.search( search ) or exit(1)
+	
+
+	## If the node didn't match to anything, use the default config file
+	if( filelist.length() == 0 )
+		if( conf.key?('enc.match') )
+			case conf.key('enc.match')
+				when "strict" then raise ArgumentError, "ERROR #{__FILE__}/#{__LINE__}: No Profile found: #{search}"+"\n" if( debug )
+				when "allow" then filelist.push( DEFAULT )
+				else 
+					filelist.push( DEFAULT )
+			end
+		end
+	end
+	
+rescue => error
+	STDERR.puts("ERROR #{__FILE__}/#{__LINE__}: No data has been found: "+"\n"+error.to_s ) if( debug )
+	exit(1)
+end
+
+##---------------------------------------------------------------------------------------------------
+##---------------- Finally
+##---------------------------------------------------------------------------------------------------
+
+puts "Cerificate '#{certname}' recognized" if( debug )
+exit(0)
+

@@ -4,6 +4,6 @@
   "enc.env"   : "production",
   "enc.ctype" : "parameters",
   "db.engine" : "sqlite",
-  "dir.db" : "/home/peter/pering/enc",
-  "sqlite.db" : "/home/peter/pering/enc/enc.db"
+  "dir.db" : "/home/vagrant/puppet-util/enc",
+  "sqlite.db" : "/home/vagrant/puppet-util/enc/enc.db"
 }
