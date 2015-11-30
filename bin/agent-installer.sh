@@ -69,6 +69,14 @@ cat > ${PUPPET_CONFIG}  <<EOL
 # - https://docs.puppetlabs.com/puppet/latest/reference/config_file_main.html
 # - https://docs.puppetlabs.com/references/latest/confi
 
+[main]
+certname = ${PUPPET_NODE_NAME}
+vardir = /opt/puppetlabs/server/data/puppetserver
+logdir = /var/log/puppetlabs/puppetserver
+rundir = /var/run/puppetlabs/puppetserver
+pidfile = /var/run/puppetlabs/puppetserver/puppetserver.pid
+codedir = /etc/puppetlabs/code
+
 [agent]
 	server = ${PUPPET_SERVER_NAME}
 EOL
